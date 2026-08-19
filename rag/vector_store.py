@@ -46,10 +46,23 @@ class VectorStore:
             metadatas=metadatas
         )
 
-    def query(self, query_embedding, n_results=3):
+    def query(
+        self,
+        query_embedding,
+        n_results=3,
+        document_id=None
+    ):
+        where = None
+
+        if document_id is not None:
+            where = {
+                "document_id": document_id
+            }
+
         results = self.collection.query(
             query_embeddings=[query_embedding],
-            n_results=n_results
+            n_results=n_results,
+            where=where
         )
 
         return results
