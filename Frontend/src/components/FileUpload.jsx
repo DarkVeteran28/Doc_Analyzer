@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 
-function FileUpload() {
+function FileUpload({ onAnalyze }) {
   const [selectedFile, setSelectedFile] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState('')
@@ -56,8 +56,10 @@ function FileUpload() {
   }
 
   const handleAnalyze = () => {
-    console.log('Ready to analyze:', selectedFile)
+  if (selectedFile) {
+    onAnalyze(selectedFile)
   }
+}
 
   return (
     <div className="mt-10 w-full max-w-2xl">
