@@ -3,6 +3,27 @@ from sqlalchemy.orm import Session
 from app.models.document import Document
 
 
+def create_document(
+    db: Session,
+    document_id: str,
+    filename: str,
+    file_path: str,
+    status: str
+):
+    document = Document(
+        id=document_id,
+        filename=filename,
+        file_path=file_path,
+        status=status
+    )
+
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+
+    return document
+
+
 def get_all_documents(db: Session):
     return db.query(Document).all()
 
