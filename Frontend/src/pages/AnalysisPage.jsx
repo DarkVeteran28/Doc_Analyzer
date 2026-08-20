@@ -3,14 +3,18 @@ import { useState } from 'react'
 function AnalysisPage({ file, onBack }) {
   const [question, setQuestion] = useState('')
   const [messages, setMessages] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSend = () => {
-    if (!question.trim()) return
+  const handleSend = async () => {
+    if (!question.trim() || isLoading) return
+
+    const userQuestion = question.trim()
 
     const userMessage = {
       id: Date.now(),
       role: 'user',
-      content: question,
+      content: userQuestion,
     }
 
     setMessages((prevMessages) => [
@@ -19,9 +23,13 @@ function AnalysisPage({ file, onBack }) {
     ])
 
     setQuestion('')
+    setError('')
+    setIsLoading(true)
 
-    // Temporary AI response
-    setTimeout(() => {
+    try {
+      // Temporary API simulation
+      await new Promise((resolve) => setTimeout(resolve, 1200))
+
       const aiMessage = {
         id: Date.now() + 1,
         role: 'assistant',
@@ -33,11 +41,19 @@ function AnalysisPage({ file, onBack }) {
         ...prevMessages,
         aiMessage,
       ])
-    }, 700)
+    } catch (error) {
+      console.error('Failed to get AI response:', error)
+
+      setError(
+        'Something went wrong while getting the answer. Please try again.'
+      )
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleKeyDown = (event) => {
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !isLoading) {
       handleSend()
     }
   }
@@ -59,7 +75,8 @@ function AnalysisPage({ file, onBack }) {
 
           <button
             onClick={onBack}
-            className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
+            disabled={isLoading}
+            className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             Upload Another
           </button>
@@ -68,7 +85,7 @@ function AnalysisPage({ file, onBack }) {
 
       {/* Main Layout */}
       <main className="mx-auto grid min-h-[calc(100vh-81px)] max-w-7xl grid-cols-1 md:grid-cols-4">
-        
+
         {/* Sidebar */}
         <aside className="border-b border-slate-800 p-6 md:border-b-0 md:border-r">
           <h2 className="mb-6 text-sm font-semibold uppercase tracking-wider text-slate-400">
@@ -104,7 +121,7 @@ function AnalysisPage({ file, onBack }) {
 
         {/* Chat Area */}
         <section className="flex min-h-[600px] flex-col md:col-span-3">
-          
+
           {/* Chat Header */}
           <div className="border-b border-slate-800 p-6">
             <h2 className="text-xl font-semibold">
@@ -156,6 +173,22 @@ function AnalysisPage({ file, onBack }) {
                     </div>
                   </div>
                 ))}
+
+                {/* AI Loading Indicator */}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="rounded-2xl border border-slate-700 bg-slate-900 px-5 py-3 text-sm text-slate-400">
+                      Thinking...
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="mx-auto mt-4 max-w-3xl rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                {error}
               </div>
             )}
           </div>
@@ -168,15 +201,21 @@ function AnalysisPage({ file, onBack }) {
                 value={question}
                 onChange={(event) => setQuestion(event.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask a question about your document..."
-                className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
+                disabled={isLoading}
+                placeholder={
+                  isLoading
+                    ? 'Waiting for AI response...'
+                    : 'Ask a question about your document...'
+                }
+                className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
               />
 
               <button
                 onClick={handleSend}
-                className="rounded-xl bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-500"
+                disabled={!question.trim() || isLoading}
+                className="rounded-xl bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Send
+                {isLoading ? 'Thinking...' : 'Send'}
               </button>
             </div>
           </div>
