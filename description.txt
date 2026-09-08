@@ -217,9 +217,9 @@ Next checkpoint:
 CHECKPOINT 3 - RETRIEVAL COMPARISON DIAGNOSTICS
 ------------------------------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: e61f37ae checkpoint: compare BM25 and vector retrieval
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -294,3 +294,58 @@ Architecture after this checkpoint:
 Next checkpoint:
 - Implement and test RRF fusion with overlapping, disjoint, and multi-document
   result sets.
+
+
+CHECKPOINT 4 - RRF FUSION
+-------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Validated rag/fusion.py reciprocal_rank_fusion with unit tests for
+  overlapping, disjoint, and multi-document ranked lists.
+- Confirmed deduplication by chunk_id, metadata preservation, and deterministic
+  tie-breaking by chunk_id ascending.
+- Did not integrate fusion into the active retrieval pipeline yet.
+
+Files added:
+- rag/tests/test_fusion.py
+
+Files modified:
+- description.txt
+
+Files NOT modified:
+- rag/fusion.py (implementation unchanged from Checkpoint 1)
+- rag/retrieval.py
+- rag/rag_pipeline.py
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- Hybrid retrieval requires a tested, deterministic fusion layer before wiring
+  it into ask_question.
+
+RRF behavior verified:
+- Overlapping lists: chunks appearing in both retrievers accumulate higher RRF
+  scores and rise in the fused ranking.
+- Disjoint lists: all unique chunks are retained and ordered by RRF score.
+- Multi-document lists: chunks from different documents remain distinguishable
+  via document_id metadata after fusion.
+- Ties: equal RRF scores break deterministically on chunk_id ascending.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_fusion.py -q
+
+Test results:
+- 4 passed in 0.02s.
+
+Architecture after this checkpoint:
+- RRF fusion is tested and ready for pipeline integration.
+- Vector-only retrieval remains the active production path.
+
+Next checkpoint:
+- Integrate hybrid retrieval into the existing pipeline while keeping
+  ask_question(...) compatible and defaulting to hybrid internally.
