@@ -57,14 +57,16 @@ def ask_question(
     document_id,
     question,
     n_results=3,
-    persist_directory="chroma_db"
+    persist_directory="chroma_db",
+    retrieval_mode="hybrid",
 ):
     # Step 1: Retrieve relevant chunks
     retrieved_chunks = retrieve_chunks(
         document_id=document_id,
         question=question,
         n_results=n_results,
-        persist_directory=persist_directory
+        persist_directory=persist_directory,
+        retrieval_mode=retrieval_mode,
     )
 
     # Step 2: Generate answer using retrieved context

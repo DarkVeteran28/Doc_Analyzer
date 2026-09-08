@@ -417,9 +417,9 @@ Next checkpoint:
 CHECKPOINT 6 - SOURCE PRESERVATION
 ----------------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: 8cf59eca checkpoint: verify hybrid source preservation
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -464,3 +464,58 @@ Architecture after this checkpoint:
 
 Next checkpoint:
 - Add internal retrieval modes: vector, bm25, and hybrid.
+
+
+CHECKPOINT 7 - RETRIEVAL MODES
+------------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Added retrieval_mode parameter to retrieve_chunks, ask_question in
+  rag_pipeline.py, and rag_service.py with default "hybrid".
+- Supported modes: vector, bm25, hybrid.
+- Added rag/tests/test_retrieval_modes.py.
+
+Files added:
+- rag/tests/test_retrieval_modes.py
+
+Files modified:
+- rag/retrieval.py
+- rag/rag_pipeline.py
+- rag_service.py
+- description.txt
+
+Files NOT modified:
+- rag/generation.py
+- Frontend and backend application files
+
+Why the change was made:
+- Internal diagnostics and evaluation need explicit control over retrieval
+  strategy while keeping the default hybrid behavior.
+
+Mode behavior:
+- vector: cosine similarity via ChromaDB only.
+- bm25: rank-bm25 keyword retrieval only.
+- hybrid: RRF fusion of vector and bm25 (default).
+- Invalid modes raise ValueError.
+
+Backward compatibility:
+- Existing callers omitting retrieval_mode continue to use hybrid retrieval.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_retrieval_modes.py rag/tests/test_hybrid_retrieval.py -q
+
+Test results:
+- 7 passed in 16.62s.
+
+Architecture after this checkpoint:
+- All three retrieval modes are selectable internally.
+- Default production behavior remains hybrid.
+
+Next checkpoint:
+- Add a small evaluation dataset and Recall@K/MRR comparison across modes.

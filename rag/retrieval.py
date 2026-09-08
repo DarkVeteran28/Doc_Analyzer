@@ -115,15 +115,53 @@ def retrieve_hybrid_chunks(
     ]
 
 
+def _public_chunks(chunks):
+    return [
+        {
+            "page": chunk["page"],
+            "text": chunk["text"],
+            "score": chunk["score"],
+        }
+        for chunk in chunks
+    ]
+
+
 def retrieve_chunks(
     document_id,
     question,
     n_results=3,
     persist_directory="chroma_db",
+    retrieval_mode="hybrid",
 ):
-    return retrieve_hybrid_chunks(
-        document_id=document_id,
-        question=question,
-        n_results=n_results,
-        persist_directory=persist_directory,
+    if retrieval_mode == "hybrid":
+        return retrieve_hybrid_chunks(
+            document_id=document_id,
+            question=question,
+            n_results=n_results,
+            persist_directory=persist_directory,
+        )
+
+    if retrieval_mode == "vector":
+        return _public_chunks(
+            retrieve_vector_chunks(
+                document_id=document_id,
+                question=question,
+                n_results=n_results,
+                persist_directory=persist_directory,
+            )
+        )
+
+    if retrieval_mode == "bm25":
+        return _public_chunks(
+            retrieve_bm25_chunks(
+                document_id=document_id,
+                question=question,
+                n_results=n_results,
+                bm25_directory=bm25_directory_for(persist_directory),
+            )
+        )
+
+    raise ValueError(
+        f"Unsupported retrieval_mode: {retrieval_mode!r}. "
+        "Expected 'vector', 'bm25', or 'hybrid'."
     )
