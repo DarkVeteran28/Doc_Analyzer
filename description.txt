@@ -1,9 +1,9 @@
 CHECKPOINT 0 - BASELINE
 ---------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: 3c4eb7cd checkpoint: establish RAG baseline
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -66,6 +66,85 @@ Architecture after this checkpoint:
 - Existing vector-only RAG remains unchanged.
 - No BM25 index or fusion layer exists yet.
 
+
+CHECKPOINT 1 - HYBRID ARCHITECTURE
+----------------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Defined the hybrid retrieval architecture in this log.
+- Added rag/bm25.py for document-scoped BM25 indexing with separate persistence.
+- Added rag/fusion.py for deterministic Reciprocal Rank Fusion (RRF).
+- Did not modify the existing vector pipeline, generation layer, or public API.
+
+Files added:
+- rag/bm25.py
+- rag/fusion.py
+
+Files modified:
+- description.txt
+
+Files NOT modified:
+- rag/retrieval.py
+- rag/rag_pipeline.py
+- rag/vector_store.py
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- Hybrid retrieval requires a clear architecture before BM25 scoring,
+  diagnostics, and pipeline integration in later checkpoints.
+
+Hybrid retrieval architecture:
+- Ingestion remains shared: PDF -> chunk_pages -> identical chunk records.
+- Each chunk carries page, local chunk_id (page_N_chunk_M), and text.
+- Vector path (unchanged): chunk text -> MiniLM embedding -> ChromaDB,
+  keyed by stable id {document_id}_{page}_{chunk_number} with metadata
+  document_id, page, chunk_id.
+- BM25 path (new): same chunks -> BM25Index.add_chunks, persisted as one
+  JSON file per document under bm25_index/ (separate from chroma_db/).
+- Stable chunk_id is shared across both stores so fusion can deduplicate.
+- Retrieval modes planned for later checkpoints: vector, bm25, hybrid.
+- Hybrid default (Checkpoint 5): run vector and BM25 retrieval independently,
+  fuse with RRF in rag/fusion.py, pass fused chunks to existing generation.
+
+BM25 module design (rag/bm25.py):
+- BM25Index(persist_directory="bm25_index")
+- add_chunks(chunks, document_id) stores document_id, chunk_id, page, text,
+  and tokenized text per chunk.
+- query(document_id, question, n_results) defines the retrieval interface;
+  BM25 scoring with rank-bm25 is implemented in Checkpoint 2.
+- Persistence is file-based and document-scoped, not stored in ChromaDB.
+
+Fusion module design (rag/fusion.py):
+- reciprocal_rank_fusion(ranked_lists, k=60) merges ranked result lists.
+- Deduplication uses stable chunk_id.
+- Metadata (page, text, document_id) is preserved from the first occurrence.
+- Ranking is deterministic: RRF score descending, then chunk_id ascending.
+
+Public interface preservation:
+- rag_service.process_document(...) and rag_service.ask_question(...) signatures
+  remain unchanged through this checkpoint.
+
+Tests executed:
+- Existing deterministic baseline tests not re-run; no new tests added yet.
+- BM25 scoring tests are planned for Checkpoint 2.
+- RRF unit tests are planned for Checkpoint 4.
+
+Test results:
+- No new test failures introduced; modules are importable and architecture
+  is defined without altering the active retrieval path.
+
+Architecture after this checkpoint:
+- Vector-only retrieval remains the active production path.
+- BM25 persistence layer and RRF fusion utility exist as standalone modules.
+- Hybrid integration into ask_question is planned for Checkpoint 5.
+
 Next checkpoint:
-- Define the hybrid retrieval architecture while preserving the public
-  process_document(...) and ask_question(...) interfaces.
+- Add rank-bm25, implement BM25 scoring in rag/bm25.py, and add indexing
+  tests for exact terms, numbers, metadata preservation, and document
+  isolation.
