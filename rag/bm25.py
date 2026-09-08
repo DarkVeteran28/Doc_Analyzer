@@ -20,6 +20,7 @@ class BM25Index:
     def __init__(self, persist_directory="bm25_index"):
         self.persist_directory = persist_directory
         os.makedirs(self.persist_directory, exist_ok=True)
+        self._cache = {}
 
     def _document_path(self, document_id):
         safe_id = re.sub(r"[^\w\-]", "_", document_id)
@@ -41,6 +42,8 @@ class BM25Index:
         with open(self._document_path(document_id), "w", encoding="utf-8") as handle:
             json.dump(records, handle, indent=2)
 
+        self._cache.pop(document_id, None)
+
         return len(records)
 
     def _load_records(self, document_id):
@@ -56,11 +59,34 @@ class BM25Index:
         corpus = [record["tokens"] for record in records]
         return BM25Okapi(corpus)
 
+    def _get_cached_index(self, document_id):
+        path = self._document_path(document_id)
+
+        if not os.path.exists(path):
+            self._cache.pop(document_id, None)
+            return [], None
+
+        mtime = os.path.getmtime(path)
+        cached = self._cache.get(document_id)
+
+        if cached and cached["mtime"] == mtime:
+            return cached["records"], cached["bm25"]
+
+        records = self._load_records(document_id)
+        bm25 = self._build_index(records) if records else None
+        self._cache[document_id] = {
+            "mtime": mtime,
+            "records": records,
+            "bm25": bm25,
+        }
+
+        return records, bm25
+
     def query(self, document_id, question, n_results=3):
         """Return ranked chunks for a document-scoped BM25 query."""
-        records = self._load_records(document_id)
+        records, bm25 = self._get_cached_index(document_id)
 
-        if not records:
+        if not records or bm25 is None:
             return []
 
         query_tokens = _tokenize(question)
@@ -68,7 +94,6 @@ class BM25Index:
         if not query_tokens:
             return []
 
-        bm25 = self._build_index(records)
         scores = bm25.get_scores(query_tokens)
 
         ranked_indices = sorted(

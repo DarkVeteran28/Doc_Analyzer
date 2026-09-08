@@ -583,9 +583,9 @@ Next checkpoint:
 CHECKPOINT 9 - NO-ANSWER BEHAVIOR
 -----------------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: b94b6267 checkpoint: validate no-answer behavior
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -616,3 +616,41 @@ Test results:
 
 Next checkpoint:
 - Avoid rebuilding BM25 per question by caching indexes per document.
+
+
+CHECKPOINT 10 - BM25 INDEX CACHING
+----------------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Updated rag/bm25.py to cache BM25Okapi indexes per document_id using file
+  modification time invalidation.
+- add_chunks clears the cache entry for the updated document.
+
+Files modified:
+- rag/bm25.py
+- description.txt
+
+Why the change was made:
+- Rebuilding BM25 from disk on every query is unnecessary overhead once a
+  document index is loaded.
+
+Caching behavior:
+- First query loads records and builds BM25Okapi.
+- Subsequent queries reuse the cached index until the persisted JSON changes.
+- Cache is scoped to the BM25Index instance.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_full_hybrid_validation.py::test_bm25_index_is_cached_between_queries
+  rag/tests/test_bm25.py -q
+
+Test results:
+- 6 passed (including cache test).
+
+Next checkpoint:
+- Run complete upload/index/retrieve/fuse/generate/source/isolation validation.
