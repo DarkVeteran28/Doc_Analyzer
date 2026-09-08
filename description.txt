@@ -153,9 +153,9 @@ Next checkpoint:
 CHECKPOINT 2 - BM25 INDEXING
 ----------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: 38c23096 checkpoint: implement BM25 indexing and tests
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -212,3 +212,85 @@ Architecture after this checkpoint:
 Next checkpoint:
 - Add diagnostics/tests comparing BM25-only and vector-only results for the
   same query, recording observed differences in this log.
+
+
+CHECKPOINT 3 - RETRIEVAL COMPARISON DIAGNOSTICS
+------------------------------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Added rag/tests/test_retrieval_comparison.py to index identical chunks in
+  both ChromaDB and BM25, then compare retrieval rankings for the same queries.
+- Recorded only observed BM25-only vs vector-only differences below.
+- Did not change the active retrieval path or integrate hybrid fusion yet.
+
+Files added:
+- rag/tests/test_retrieval_comparison.py
+
+Files modified:
+- description.txt
+
+Files NOT modified:
+- rag/retrieval.py
+- rag/bm25.py
+- rag/rag_pipeline.py
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- Hybrid retrieval should be informed by real ranking differences between
+  keyword and semantic search on the same document corpus.
+
+Comparison setup:
+- Shared corpus: 4 chunks on pages 2, 5, 7, and 9 for document paper_a.
+- Vector store: ChromaDB with MiniLM embeddings.
+- BM25 store: rank-bm25 over the same chunk texts.
+- n_results=3 for both retrievers.
+
+Observed differences (actual run on 2026-09-09):
+1. Query: "What did the experiment show?"
+   - Vector top-3 pages: [7, 2, 5]
+   - BM25 top-3 pages: [5, 2, 7]
+   - Same top result: No. BM25 ranked page 5 first; vector ranked page 7 first.
+   - Same full ranking: No.
+
+2. Query: "sample ID 7781 calibration 0.0031"
+   - Vector top-3 pages: [9, 7, 5]
+   - BM25 top-3 pages: [9, 2, 5]
+   - Same top result: Yes (page 9).
+   - Same full ranking: No. Vector placed page 7 second; BM25 placed page 2
+     second.
+
+3. Query: "history of experimental chemistry"
+   - Vector top-3 pages: [2, 5, 7]
+   - BM25 top-3 pages: [2, 5, 7]
+   - Same top result: Yes.
+   - Same full ranking: Yes.
+
+Summary of observed behavior:
+- BM25 and vector agree on the top result for 2 of 3 queries.
+- Full top-3 ranking matched for only 1 of 3 queries.
+- Numeric/id-heavy query: both retrievers ranked page 9 first, but secondary
+  ordering diverged.
+- Experiment-focused query: retrievers disagreed on the top result, with BM25
+  favoring the chunk containing the literal word "experiment" on page 5.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_retrieval_comparison.py -q
+
+Test results:
+- 3 passed in 28.92s.
+
+Architecture after this checkpoint:
+- Vector-only retrieval remains the active production path.
+- Documented evidence shows BM25 and vector rankings diverge enough to justify
+  RRF fusion in later checkpoints.
+
+Next checkpoint:
+- Implement and test RRF fusion with overlapping, disjoint, and multi-document
+  result sets.
