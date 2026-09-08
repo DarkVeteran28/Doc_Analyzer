@@ -2,6 +2,8 @@ import json
 import os
 import re
 
+from rank_bm25 import BM25Okapi
+
 
 def _tokenize(text):
     return re.findall(r"\w+", text.lower())
@@ -50,21 +52,43 @@ class BM25Index:
         with open(path, encoding="utf-8") as handle:
             return json.load(handle)
 
-    def query(self, document_id, question, n_results=3):
-        """Return ranked chunks for a document-scoped BM25 query.
+    def _build_index(self, records):
+        corpus = [record["tokens"] for record in records]
+        return BM25Okapi(corpus)
 
-        Full BM25 scoring is implemented in Checkpoint 2 after rank-bm25
-        is added. This method defines the retrieval interface and metadata
-        contract used by hybrid fusion.
-        """
+    def query(self, document_id, question, n_results=3):
+        """Return ranked chunks for a document-scoped BM25 query."""
         records = self._load_records(document_id)
 
         if not records:
             return []
 
-        raise NotImplementedError(
-            "BM25 scoring is added in Checkpoint 2 with rank-bm25."
+        query_tokens = _tokenize(question)
+
+        if not query_tokens:
+            return []
+
+        bm25 = self._build_index(records)
+        scores = bm25.get_scores(query_tokens)
+
+        ranked_indices = sorted(
+            range(len(records)),
+            key=lambda index: (-scores[index], records[index]["chunk_id"])
         )
+
+        results = []
+
+        for index in ranked_indices[:n_results]:
+            record = records[index]
+            results.append({
+                "chunk_id": record["chunk_id"],
+                "document_id": record["document_id"],
+                "page": record["page"],
+                "text": record["text"],
+                "score": float(scores[index]),
+            })
+
+        return results
 
     def list_documents(self):
         documents = []

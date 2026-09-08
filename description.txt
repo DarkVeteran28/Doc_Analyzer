@@ -70,9 +70,9 @@ Architecture after this checkpoint:
 CHECKPOINT 1 - HYBRID ARCHITECTURE
 ----------------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: 8608c132 checkpoint: define hybrid retrieval architecture
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -148,3 +148,67 @@ Next checkpoint:
 - Add rank-bm25, implement BM25 scoring in rag/bm25.py, and add indexing
   tests for exact terms, numbers, metadata preservation, and document
   isolation.
+
+
+CHECKPOINT 2 - BM25 INDEXING
+----------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Implemented BM25 scoring in rag/bm25.py using rank-bm25.
+- Added requirements-rag.txt with the rank-bm25 dependency.
+- Added rag/tests/test_bm25.py covering exact terms, numbers, metadata
+  preservation, document isolation, and chunk_pages integration.
+- Did not modify ChromaDB, embeddings, or the active vector retrieval path.
+
+Files added:
+- requirements-rag.txt
+- rag/tests/test_bm25.py
+
+Files modified:
+- rag/bm25.py
+- description.txt
+
+Files NOT modified:
+- rag/vector_store.py
+- rag/embeddings.py
+- rag/retrieval.py
+- rag/rag_pipeline.py
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- BM25 keyword retrieval is required for hybrid fusion and must index the
+  same chunks as the vector store while remaining document-scoped.
+
+BM25 implementation details:
+- add_chunks persists one JSON file per document under bm25_index/.
+- Each record stores document_id, chunk_id, page, text, and tokenized text.
+- query tokenizes the question, builds BM25Okapi from the document corpus,
+  ranks by score with chunk_id tie-breaking, and returns top n_results.
+- Stable chunk_id format matches ChromaDB: {document_id}_{page}_{chunk_number}.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_bm25.py -q
+
+Test results:
+- 5 passed in 0.03s.
+- test_bm25_exact_term_match: top result matches experiment wording on page 5.
+- test_bm25_number_match: retrieves chunk containing "42".
+- test_bm25_metadata_preservation: chunk_id, document_id, page, text, score kept.
+- test_bm25_document_isolation: paper_a query returns only paper_a chunks.
+- test_bm25_indexes_chunk_pages_output: chunk_pages output indexes and retrieves
+  numeric term "101325" correctly.
+
+Architecture after this checkpoint:
+- Vector-only retrieval remains the active production path.
+- BM25 indexing and querying work as a standalone document-scoped store.
+- Hybrid fusion and pipeline integration remain planned for later checkpoints.
+
+Next checkpoint:
+- Add diagnostics/tests comparing BM25-only and vector-only results for the
+  same query, recording observed differences in this log.
