@@ -354,9 +354,9 @@ Next checkpoint:
 CHECKPOINT 5 - HYBRID PIPELINE INTEGRATION
 ------------------------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: 69418bd9 checkpoint: integrate hybrid retrieval pipeline
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -412,3 +412,55 @@ Architecture after this checkpoint:
 
 Next checkpoint:
 - Verify source preservation through hybrid retrieval and build_sources.
+
+
+CHECKPOINT 6 - SOURCE PRESERVATION
+----------------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Added rag/tests/test_source_preservation.py to verify hybrid retrieval results
+  still produce correct page-level sources through build_sources.
+- Confirmed duplicate pages in fused results deduplicate to one source per page.
+- Confirmed top fused chunk text is preserved in the first source entry.
+
+Files added:
+- rag/tests/test_source_preservation.py
+
+Files modified:
+- description.txt
+
+Files NOT modified:
+- rag/sources.py
+- rag/generation.py
+- rag/rag_pipeline.py
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- Hybrid fusion can return multiple chunks from the same page; source citations
+  must remain stable for the frontend.
+
+Source preservation verified:
+- build_sources keeps one entry per page in fused-result order.
+- Source text comes from the highest-ranked retrieved chunk for that page.
+- Fused hybrid ranking still surfaces page 5 first for the experiment query
+  on the standard 3-chunk corpus.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_source_preservation.py -q
+
+Test results:
+- 3 passed in 14.74s.
+
+Architecture after this checkpoint:
+- Hybrid retrieval integrates with existing build_sources without changes.
+- Page-level source contract remains intact.
+
+Next checkpoint:
+- Add internal retrieval modes: vector, bm25, and hybrid.
