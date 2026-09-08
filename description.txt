@@ -1,0 +1,71 @@
+CHECKPOINT 0 - BASELINE
+---------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Established and tested the original RAG baseline before any BM25 work.
+- Added this cumulative development log only.
+
+Files added:
+- description.txt
+
+Files modified:
+- None
+
+Files NOT modified:
+- All existing files under rag/
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- The project requires a documented, reproducible baseline before extending
+  vector retrieval with BM25.
+
+Existing files and dependencies:
+- The RAG branch contains rag/, rag_service.py, tests, and persisted Chroma
+  test databases. It has no root README.md or requirements.txt.
+- Runtime imports require pypdf, sentence-transformers, chromadb, ollama,
+  numpy, and pytest.
+
+Existing RAG flow:
+- PdfReader extracts page text.
+- chunk_pages creates 600-word chunks with 100-word overlap.
+- all-MiniLM-L6-v2 produces embeddings.
+- Chroma PersistentClient stores embeddings in a documents collection with
+  document_id, page, and chunk_id metadata.
+- retrieve_chunks filters Chroma queries by document_id.
+- qwen3:8b is invoked through Ollama with retrieved context.
+- build_sources returns one source per page.
+- rag_service.py keeps process_document(...) and ask_question(...) as the
+  external interface.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_chunking.py
+  rag/tests/test_ingestion.py rag/tests/test_generation.py
+  rag/tests/test_sources.py -q
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_embeddings.py rag/tests/test_vector_store.py
+  rag/tests/test_retrieval.py rag/tests/test_generation_llm.py
+  rag/tests/test_rag_pipeline.py -q
+
+Test results:
+- Deterministic tests: 4 passed in 0.21s.
+- Model-backed tests: 4 passed before interruption.
+- Failure: test_full_rag_pipeline remained blocked in the Ollama HTTP client
+  for 401.76 seconds. It was interrupted, so the full end-to-end baseline is
+  inconclusive rather than successful.
+- Resolution: retain the original LLM interface and make BM25/vector/fusion
+  tests independent of the LLM call. Revisit the Ollama responsiveness during
+  final end-to-end validation.
+
+Architecture after this checkpoint:
+- Existing vector-only RAG remains unchanged.
+- No BM25 index or fusion layer exists yet.
+
+Next checkpoint:
+- Define the hybrid retrieval architecture while preserving the public
+  process_document(...) and ask_question(...) interfaces.
