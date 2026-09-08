@@ -469,9 +469,9 @@ Next checkpoint:
 CHECKPOINT 7 - RETRIEVAL MODES
 ------------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: de22f351 checkpoint: add internal retrieval modes
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -519,3 +519,62 @@ Architecture after this checkpoint:
 
 Next checkpoint:
 - Add a small evaluation dataset and Recall@K/MRR comparison across modes.
+
+
+CHECKPOINT 8 - EVALUATION DATASET
+---------------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Added rag/evaluation/dataset.json with 4 queries over a 5-chunk corpus.
+- Added rag/evaluation/metrics.py with Recall@K and MRR helpers.
+- Added rag/tests/test_evaluation.py comparing vector, bm25, and hybrid modes.
+
+Files added:
+- rag/evaluation/dataset.json
+- rag/evaluation/metrics.py
+- rag/tests/test_evaluation.py
+
+Files modified:
+- description.txt
+
+Files NOT modified:
+- rag/generation.py
+- Frontend and backend application files
+
+Why the change was made:
+- Hybrid retrieval needs a small, transparent benchmark to compare modes on the
+  same indexed corpus.
+
+Evaluation dataset:
+- 5 chunks on pages 1, 3, 5, 7, and 9 for document eval_paper.
+- 4 queries with one relevant page each, covering experiment results, numeric
+  identifiers, history wording, and catalyst terms.
+
+Observed metrics at K=3 (actual run on 2026-09-09):
+- vector: Recall@3 = 1.0, MRR = 1.0
+- bm25: Recall@3 = 1.0, MRR = 1.0
+- hybrid: Recall@3 = 1.0, MRR = 1.0
+
+Honest assessment:
+- On this tiny dataset all three modes found the relevant page within top 3
+  for every query, so no mode showed an advantage.
+- The dataset is intentionally small and easy; it validates the evaluation
+  plumbing rather than proving hybrid superiority in production.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_evaluation.py -q
+
+Test results:
+- 1 passed in 20.31s.
+
+Architecture after this checkpoint:
+- Recall@K and MRR can be computed consistently across retrieval modes.
+- Default hybrid behavior unchanged.
+
+Next checkpoint:
+- Validate no-answer behavior without adding a complex confidence system.

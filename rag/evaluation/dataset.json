@@ -1,0 +1,48 @@
+{
+  "document_id": "eval_paper",
+  "chunks": [
+    {
+      "chunk_id": "page_1_chunk_0",
+      "page": 1,
+      "text": "Abstract. This study examines catalyst loading of 15 mg and reaction yield."
+    },
+    {
+      "chunk_id": "page_3_chunk_0",
+      "page": 3,
+      "text": "Methods. The experiment used sample ID 7781 with baseline pressure 101325 pascals."
+    },
+    {
+      "chunk_id": "page_5_chunk_0",
+      "page": 5,
+      "text": "Results. The experiment showed that increasing temperature improved the reaction rate by 42 percent."
+    },
+    {
+      "chunk_id": "page_7_chunk_0",
+      "page": 7,
+      "text": "Discussion. The experimental method produced more accurate measurements than prior work."
+    },
+    {
+      "chunk_id": "page_9_chunk_0",
+      "page": 9,
+      "text": "Conclusion. The paper summarizes the history of experimental chemistry in this domain."
+    }
+  ],
+  "queries": [
+    {
+      "question": "What did the experiment show about temperature?",
+      "relevant_pages": [5]
+    },
+    {
+      "question": "sample ID 7781 baseline pressure 101325",
+      "relevant_pages": [3]
+    },
+    {
+      "question": "history of experimental chemistry",
+      "relevant_pages": [9]
+    },
+    {
+      "question": "catalyst loading 15 mg yield",
+      "relevant_pages": [1]
+    }
+  ]
+}
