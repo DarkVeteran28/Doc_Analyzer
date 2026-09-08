@@ -524,9 +524,9 @@ Next checkpoint:
 CHECKPOINT 8 - EVALUATION DATASET
 ---------------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: d5bb8c5b checkpoint: add retrieval evaluation dataset
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -578,3 +578,41 @@ Architecture after this checkpoint:
 
 Next checkpoint:
 - Validate no-answer behavior without adding a complex confidence system.
+
+
+CHECKPOINT 9 - NO-ANSWER BEHAVIOR
+-----------------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Added rag/tests/test_no_answer.py to validate empty retrieval and prompt
+  behavior without introducing a confidence-scoring layer.
+
+Files added:
+- rag/tests/test_no_answer.py
+
+Files modified:
+- description.txt
+
+Why the change was made:
+- The generation prompt already instructs the model to admit insufficient
+  context; retrieval should not add a complex confidence system.
+
+No-answer behavior verified:
+- Missing document indexes return empty retrieval and empty sources.
+- build_rag_prompt with zero chunks still includes the no-answer instruction.
+- Unrelated queries may still return low-relevance chunks; the LLM layer is
+  expected to decline based on prompt instructions, not retrieval thresholds.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_no_answer.py -q
+
+Test results:
+- 3 passed.
+
+Next checkpoint:
+- Avoid rebuilding BM25 per question by caching indexes per document.
