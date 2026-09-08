@@ -299,9 +299,9 @@ Next checkpoint:
 CHECKPOINT 4 - RRF FUSION
 -------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: 4cabdb2d checkpoint: implement RRF fusion and tests
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -349,3 +349,66 @@ Architecture after this checkpoint:
 Next checkpoint:
 - Integrate hybrid retrieval into the existing pipeline while keeping
   ask_question(...) compatible and defaulting to hybrid internally.
+
+
+CHECKPOINT 5 - HYBRID PIPELINE INTEGRATION
+------------------------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Updated rag/retrieval.py to expose vector, BM25, and hybrid retrieval helpers.
+- retrieve_chunks now defaults to hybrid RRF fusion internally.
+- Updated rag/rag_pipeline.py process_document to index the same chunks in
+  both ChromaDB and BM25Index during upload.
+- ask_question(...) signature and return shape are unchanged; generation layer
+  untouched.
+- Added rag/tests/test_hybrid_retrieval.py and updated test_rag_pipeline cleanup
+  for paired BM25 directories.
+
+Files added:
+- rag/tests/test_hybrid_retrieval.py
+
+Files modified:
+- rag/retrieval.py
+- rag/rag_pipeline.py
+- rag/tests/test_rag_pipeline.py
+- description.txt
+
+Files NOT modified:
+- rag/generation.py
+- rag/sources.py
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- Production Q&A should benefit from hybrid retrieval without breaking the
+  existing rag_service interface or rewriting answer generation.
+
+Integration details:
+- bm25_directory_for(persist_directory) maps chroma_db -> bm25_index and test
+  directories to paired *_bm25 paths.
+- Hybrid retrieval fuses vector and BM25 ranked lists when both exist; falls
+  back to vector-only when BM25 index is absent.
+- Fused chunks returned to generation retain page, text, and score only.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_hybrid_retrieval.py rag/tests/test_retrieval.py
+  rag/tests/test_bm25.py rag/tests/test_fusion.py
+  rag/tests/test_chunking.py rag/tests/test_ingestion.py
+  rag/tests/test_generation.py rag/tests/test_sources.py -q
+
+Test results:
+- 17 passed in 12.55s.
+
+Architecture after this checkpoint:
+- ask_question uses hybrid retrieval by default.
+- process_document indexes both vector and BM25 stores.
+- Generation and source-building layers remain unchanged.
+
+Next checkpoint:
+- Verify source preservation through hybrid retrieval and build_sources.

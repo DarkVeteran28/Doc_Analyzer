@@ -9,9 +9,14 @@ from rag.rag_pipeline import (
 def test_full_rag_pipeline():
 
     test_db = "test_pipeline_db"
+    test_bm25_db = f"{test_db}_bm25"
 
     shutil.rmtree(
         test_db,
+        ignore_errors=True
+    )
+    shutil.rmtree(
+        test_bm25_db,
         ignore_errors=True
     )
 
