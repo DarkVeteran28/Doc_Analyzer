@@ -621,9 +621,9 @@ Next checkpoint:
 CHECKPOINT 10 - BM25 INDEX CACHING
 ----------------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: 656fddd5 checkpoint: cache BM25 index per document
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -654,3 +654,49 @@ Test results:
 
 Next checkpoint:
 - Run complete upload/index/retrieve/fuse/generate/source/isolation validation.
+
+
+CHECKPOINT 11 - FULL HYBRID VALIDATION
+--------------------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Added rag/tests/test_full_hybrid_validation.py covering index, hybrid retrieve,
+  source building, document isolation, and ask_question with mocked generation.
+- Ran the full non-LLM RAG test suite.
+
+Files added:
+- rag/tests/test_full_hybrid_validation.py
+
+Files modified:
+- description.txt
+
+Validation coverage:
+- Dual indexing into ChromaDB and BM25 for multiple documents.
+- Hybrid retrieval returns only doc_a pages when querying doc_a.
+- build_sources works on hybrid results.
+- ask_question returns answer and sources with generation mocked.
+- BM25 cache prevents rebuild on repeated queries.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/ -q
+  --ignore=rag/tests/test_generation_llm.py
+  --ignore=rag/tests/test_rag_pipeline.py
+
+Test results:
+- 35 passed in 12.26s.
+- LLM-backed tests (test_generation_llm.py, test_rag_pipeline.py) were excluded
+  because baseline Ollama end-to-end validation remains inconclusive.
+
+Architecture after this checkpoint:
+- Hybrid RAG pipeline is integrated end-to-end for indexing, retrieval, fusion,
+  source preservation, and Q&A orchestration.
+- Default retrieval mode is hybrid via rag_service.ask_question(...).
+- Vector and BM25 stores remain separate; generation layer unchanged.
+
+Remaining follow-up:
+- Re-run test_rag_pipeline.py when Ollama qwen3:8b responds reliably.
