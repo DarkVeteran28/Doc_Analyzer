@@ -930,3 +930,87 @@ Total test files in rag/tests/: 19
 Non-LLM tests passing: 44
 LLM E2E tests passing: 1 (test_rag_pipeline.py)
 Remaining optional follow-up: test_generation_llm.py (not required for pipeline validation)
+
+
+CHECKPOINT 17 - FINAL REPOSITORY & CODE AUDIT
+----------------------------------------------
+Status: COMPLETED
+Git branch: RAG
+Date: 2026-09-09
+
+Audit scope:
+- Accidentally tracked secrets or .env files
+- Unnecessary or generated files
+- .gitignore correctness
+- Dead / debug code
+- Hardcoded local / absolute paths
+- Broken imports or configuration
+- Dependency / requirements completeness
+- README setup and run instructions
+- Test configuration
+- Git status and origin/RAG synchronization
+
+FINDINGS AND FIXES
+------------------
+
+ISSUE 1 — .gitignore was a shell script, not a pattern file [FIXED]
+  The .gitignore file contained literal shell heredoc syntax
+  ("cat >> .gitignore <<'EOF' ... EOF") from a previous mis-applied command.
+  No files were being ignored as a result.
+  Fix: Replaced with correct ignore patterns covering venv/, .venv/,
+  __pycache__/, *.py[cod], .pytest_cache/, uploads/, chroma_db/,
+  bm25_index/, test_*_chroma/, test_*_chroma_bm25/, test_*_bm25/,
+  *.sqlite3, .env, .env.*, .DS_Store.
+
+ISSUE 2 — Generated files tracked in git [FIXED]
+  rag/__pycache__/ (7 .pyc files), rag/tests/__pycache__/ (7 .pyc files),
+  rag/test_rag_db/ (4 Chroma binary files + sqlite3),
+  test_chroma_db/ (4 binary files + sqlite3),
+  test_pipeline_db/ (4 binary files + sqlite3),
+  test_retrieval_db/ (4 binary files + sqlite3)
+  were all committed to the repository.
+  Fix: Removed from git index with `git rm --cached -r`.
+
+ISSUE 3 — Dead function generate_response in rag/generation.py [FIXED]
+  generate_response(question, retrieved_chunks) was defined at the top of
+  generation.py but never called anywhere in the codebase (confirmed by
+  global grep). It redundantly called generate_answer + build_sources,
+  duplicating what rag_pipeline.py already orchestrates. The unused import
+  of build_sources was also removed along with this function.
+  Fix: Removed the dead function and its associated import.
+
+ISSUE 4 — Hardcoded absolute PYTHONPATH in README.md [FIXED]
+  README.md Setup section contained:
+    export PYTHONPATH=/path/to/doc-analyzer-rag
+  This is a hardcoded placeholder path that breaks on any machine.
+  Fix: Replaced with the portable relative form:
+    export PYTHONPATH=.
+
+NO ISSUES FOUND
+---------------
+- No .env files with secrets tracked.
+- No API keys, tokens, or credentials in any source file.
+- All production imports verified (rag_pipeline.py, retrieval.py,
+  bm25.py, fusion.py, vector_store.py, generation.py, ingestion.py,
+  chunking.py, embeddings.py, sources.py, rag_service.py).
+- requirements-rag.txt correctly lists rank-bm25.
+- README setup, install, and test instructions are accurate and complete.
+- rag_service.py public API wrapper is present and correct.
+- Test files: no broken imports, no debug prints that break assertions.
+  Print statements in tests are cosmetic only (do not affect pass/fail).
+- No hardcoded absolute paths in any source file.
+- No broken imports detected.
+- test_rag.py, test_eval_chroma_report.json, and untracked test artifact
+  directories are now covered by .gitignore patterns.
+
+TEST RESULTS
+------------
+Non-LLM test suite (excludes test_generation_llm.py, test_rag_pipeline.py):
+  44 passed in 14.53s
+  Zero failures, zero errors.
+
+Git status after commit:
+  Branch: RAG (tracking origin/RAG)
+  Local RAG == origin/RAG: SYNCHRONIZED
+
+AUDIT STATUS: FIXES APPLIED

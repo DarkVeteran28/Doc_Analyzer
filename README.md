@@ -130,7 +130,7 @@ ollama pull qwen3:8b
 ### Environment
 
 ```bash
-export PYTHONPATH=/path/to/doc-analyzer-rag
+export PYTHONPATH=.
 ```
 
 ## Running the Pipeline

@@ -1,23 +1,8 @@
 import ollama
-from rag.sources import build_sources
 
 MODEL_NAME = "qwen3:8b"
 
-def generate_response(question, retrieved_chunks):
-    answer = generate_answer(
-        question,
-        retrieved_chunks
-    )
 
-    sources = build_sources(
-        retrieved_chunks
-    )
-
-    return {
-        "answer": answer,
-        "sources": sources
-    }
-    
 def build_rag_prompt(question, retrieved_chunks):
     context_parts = []
 
