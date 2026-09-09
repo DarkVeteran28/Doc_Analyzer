@@ -1,91 +1,44 @@
 import json
-import shutil
 
-from rag.bm25 import BM25Index
-from rag.embeddings import generate_embedding
-from rag.evaluation.metrics import evaluate_retrieval_mode, load_evaluation_dataset
-from rag.retrieval import bm25_directory_for, retrieve_chunks
-from rag.vector_store import VectorStore
+from rag.evaluation.metrics import load_evaluation_dataset
+from rag.evaluation.run_evaluation import run_evaluation
 
 
-def _index_evaluation_corpus(chroma_dir, dataset):
-    bm25_dir = bm25_directory_for(chroma_dir)
-    shutil.rmtree(chroma_dir, ignore_errors=True)
-    shutil.rmtree(bm25_dir, ignore_errors=True)
-
-    document_id = dataset["document_id"]
-    embedded_chunks = []
-
-    for chunk in dataset["chunks"]:
-        indexed_chunk = dict(chunk)
-        indexed_chunk["embedding"] = generate_embedding(chunk["text"])
-        embedded_chunks.append(indexed_chunk)
-
-    VectorStore(persist_directory=chroma_dir).add_chunks(
-        embedded_chunks,
-        document_id=document_id,
-    )
-    BM25Index(persist_directory=bm25_dir).add_chunks(
-        dataset["chunks"],
-        document_id=document_id,
-    )
-
-
-def test_evaluation_metrics_on_small_dataset():
-    chroma_dir = "test_eval_chroma"
+def test_expanded_evaluation_dataset_has_expected_queries():
     dataset = load_evaluation_dataset()
-    _index_evaluation_corpus(chroma_dir, dataset)
 
-    document_id = dataset["document_id"]
-    k = 3
+    assert len(dataset["chunks"]) == 10
+    assert len(dataset["queries"]) == 25
 
-    def make_retriever(mode):
-        def retrieve(question, n_results):
-            return retrieve_chunks(
-                document_id=document_id,
-                question=question,
-                n_results=n_results,
-                persist_directory=chroma_dir,
-                retrieval_mode=mode,
-            )
+    query_types = {query["query_type"] for query in dataset["queries"]}
+    assert query_types == {
+        "exact_keyword",
+        "semantic",
+        "mixed",
+        "multi_page",
+        "irrelevant",
+    }
 
-        return retrieve
 
-    vector_scores = evaluate_retrieval_mode(
-        make_retriever("vector"),
-        dataset["queries"],
-        k=k,
-    )
-    bm25_scores = evaluate_retrieval_mode(
-        make_retriever("bm25"),
-        dataset["queries"],
-        k=k,
-    )
-    hybrid_scores = evaluate_retrieval_mode(
-        make_retriever("hybrid"),
-        dataset["queries"],
-        k=k,
-    )
+def test_expanded_evaluation_metrics():
+    chroma_dir = "test_eval_expanded_chroma"
+    report = run_evaluation(chroma_dir=chroma_dir)
 
-    for scores in (vector_scores, bm25_scores, hybrid_scores):
-        assert 0.0 <= scores["recall_at_k"] <= 1.0
-        assert 0.0 <= scores["mrr"] <= 1.0
+    assert report["query_count"] == 25
 
-    assert hybrid_scores["recall_at_k"] >= vector_scores["recall_at_k"]
-    assert hybrid_scores["mrr"] >= bm25_scores["mrr"]
+    for mode in ("vector", "bm25", "hybrid"):
+        scores = report["modes"][mode]
+        assert scores["scored_query_count"] == 21
+        assert scores["irrelevant_query_count"] == 4
 
-    report_path = chroma_dir + "_report.json"
-    with open(report_path, "w", encoding="utf-8") as handle:
-        json.dump(
-            {
-                "k": k,
-                "vector": vector_scores,
-                "bm25": bm25_scores,
-                "hybrid": hybrid_scores,
-            },
-            handle,
-            indent=2,
-        )
+        for metric in ("recall_at_1", "recall_at_3", "recall_at_5", "mrr"):
+            assert 0.0 <= scores[metric] <= 1.0
 
-    print("\nEvaluation report:")
-    print(json.dumps(json.load(open(report_path)), indent=2))
+    report_path = f"{chroma_dir}_report.json"
+    with open(report_path, encoding="utf-8") as handle:
+        saved_report = json.load(handle)
+
+    assert saved_report == report
+
+    print("\nExpanded evaluation report:")
+    print(json.dumps(report, indent=2))

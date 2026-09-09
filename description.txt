@@ -739,3 +739,50 @@ Code changes:
 - None. description.txt updated only.
 
 Final project status: COMPLETE
+
+
+CHECKPOINT 12 - EXPAND EVALUATION
+---------------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Expanded rag/evaluation/dataset.json from 4 to 25 queries and 5 to 10 chunks.
+- Added query_type labels: exact_keyword, semantic, mixed, multi_page, irrelevant.
+- Updated rag/evaluation/metrics.py for Recall@1/@3/@5 and MRR; irrelevant
+  queries excluded from scored metrics.
+- Added rag/evaluation/run_evaluation.py for repeatable evaluation runs.
+- Updated rag/tests/test_evaluation.py for the expanded dataset.
+
+Files added:
+- rag/evaluation/run_evaluation.py
+
+Files modified:
+- rag/evaluation/dataset.json
+- rag/evaluation/metrics.py
+- rag/tests/test_evaluation.py
+- description.txt
+
+Query breakdown:
+- exact_keyword: 6
+- semantic: 6
+- mixed: 5
+- multi_page: 4
+- irrelevant: 4 (excluded from Recall/MRR)
+
+Evaluation results (21 scored queries, K=1/3/5):
+- vector:  Recall@1=0.802, Recall@3=0.976, Recall@5=1.000, MRR=0.976
+- bm25:    Recall@1=0.849, Recall@3=1.000, Recall@5=1.000, MRR=1.000
+- hybrid:  Recall@1=0.849, Recall@3=1.000, Recall@5=1.000, MRR=1.000
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_evaluation.py -q
+
+Test results:
+- 2 passed in 15.06s.
+
+Next checkpoint:
+- Produce honest Vector vs BM25 vs Hybrid analysis and document limitations.

@@ -4,12 +4,22 @@
     {
       "chunk_id": "page_1_chunk_0",
       "page": 1,
-      "text": "Abstract. This study examines catalyst loading of 15 mg and reaction yield."
+      "text": "Abstract. This study examines catalyst loading of 15 mg and reaction yield under controlled laboratory conditions."
+    },
+    {
+      "chunk_id": "page_2_chunk_0",
+      "page": 2,
+      "text": "Introduction. The paper reviews prior experimental chemistry work and the laboratory background for catalytic reactions."
     },
     {
       "chunk_id": "page_3_chunk_0",
       "page": 3,
-      "text": "Methods. The experiment used sample ID 7781 with baseline pressure 101325 pascals."
+      "text": "Methods. The experiment used sample ID 7781 with baseline pressure 101325 pascals during setup."
+    },
+    {
+      "chunk_id": "page_4_chunk_0",
+      "page": 4,
+      "text": "Methods continued. Equipment calibration used control value 0.0031 before each measurement run."
     },
     {
       "chunk_id": "page_5_chunk_0",
@@ -17,32 +27,181 @@
       "text": "Results. The experiment showed that increasing temperature improved the reaction rate by 42 percent."
     },
     {
+      "chunk_id": "page_6_chunk_0",
+      "page": 6,
+      "text": "Results continued. The experiment achieved an overall reaction yield of 87 percent under the same conditions."
+    },
+    {
       "chunk_id": "page_7_chunk_0",
       "page": 7,
-      "text": "Discussion. The experimental method produced more accurate measurements than prior work."
+      "text": "Discussion. The experimental method produced more accurate measurements than prior work in this domain."
+    },
+    {
+      "chunk_id": "page_8_chunk_0",
+      "page": 8,
+      "text": "Limitations. Measurement noise and environmental interference may affect reproducibility in some runs."
     },
     {
       "chunk_id": "page_9_chunk_0",
       "page": 9,
       "text": "Conclusion. The paper summarizes the history of experimental chemistry in this domain."
+    },
+    {
+      "chunk_id": "page_10_chunk_0",
+      "page": 10,
+      "text": "Appendix Table 4 lists sample ID 7781 again alongside the calibration reference values."
     }
   ],
   "queries": [
     {
-      "question": "What did the experiment show about temperature?",
-      "relevant_pages": [5]
+      "id": "q01",
+      "query_type": "exact_keyword",
+      "question": "sample ID 7781",
+      "relevant_pages": [3, 10]
     },
     {
-      "question": "sample ID 7781 baseline pressure 101325",
+      "id": "q02",
+      "query_type": "exact_keyword",
+      "question": "101325 pascals",
       "relevant_pages": [3]
     },
     {
-      "question": "history of experimental chemistry",
+      "id": "q03",
+      "query_type": "exact_keyword",
+      "question": "42 percent reaction rate",
+      "relevant_pages": [5]
+    },
+    {
+      "id": "q04",
+      "query_type": "exact_keyword",
+      "question": "catalyst loading 15 mg",
+      "relevant_pages": [1]
+    },
+    {
+      "id": "q05",
+      "query_type": "exact_keyword",
+      "question": "calibration 0.0031",
+      "relevant_pages": [4]
+    },
+    {
+      "id": "q06",
+      "query_type": "exact_keyword",
+      "question": "Appendix Table 4 sample ID 7781",
+      "relevant_pages": [10]
+    },
+    {
+      "id": "q07",
+      "query_type": "semantic",
+      "question": "What happened when temperature increased?",
+      "relevant_pages": [5]
+    },
+    {
+      "id": "q08",
+      "query_type": "semantic",
+      "question": "How accurate were the measurements compared to earlier studies?",
+      "relevant_pages": [7]
+    },
+    {
+      "id": "q09",
+      "query_type": "semantic",
+      "question": "What background does the paper provide on laboratory chemistry?",
+      "relevant_pages": [2]
+    },
+    {
+      "id": "q10",
+      "query_type": "semantic",
+      "question": "What limitations might affect reproducibility?",
+      "relevant_pages": [8]
+    },
+    {
+      "id": "q11",
+      "query_type": "semantic",
+      "question": "What overall yield was achieved in the experiment?",
+      "relevant_pages": [6]
+    },
+    {
+      "id": "q12",
+      "query_type": "semantic",
+      "question": "How does the paper summarize the field historically?",
       "relevant_pages": [9]
     },
     {
-      "question": "catalyst loading 15 mg yield",
-      "relevant_pages": [1]
+      "id": "q13",
+      "query_type": "mixed",
+      "question": "experiment temperature 42 percent improved rate",
+      "relevant_pages": [5]
+    },
+    {
+      "id": "q14",
+      "query_type": "mixed",
+      "question": "sample 7781 calibration methods equipment",
+      "relevant_pages": [3, 4, 10]
+    },
+    {
+      "id": "q15",
+      "query_type": "mixed",
+      "question": "accurate measurements experimental method discussion",
+      "relevant_pages": [7]
+    },
+    {
+      "id": "q16",
+      "query_type": "mixed",
+      "question": "history experimental chemistry domain conclusion",
+      "relevant_pages": [9]
+    },
+    {
+      "id": "q17",
+      "query_type": "mixed",
+      "question": "noise interference limitations reproducibility",
+      "relevant_pages": [8]
+    },
+    {
+      "id": "q18",
+      "query_type": "multi_page",
+      "question": "Where is sample ID 7781 mentioned in the document?",
+      "relevant_pages": [3, 10]
+    },
+    {
+      "id": "q19",
+      "query_type": "multi_page",
+      "question": "What results were reported for the experiment?",
+      "relevant_pages": [5, 6]
+    },
+    {
+      "id": "q20",
+      "query_type": "multi_page",
+      "question": "Describe the methods and calibration procedure.",
+      "relevant_pages": [3, 4]
+    },
+    {
+      "id": "q21",
+      "query_type": "multi_page",
+      "question": "catalyst loading and reaction yield",
+      "relevant_pages": [1, 6]
+    },
+    {
+      "id": "q22",
+      "query_type": "irrelevant",
+      "question": "Who won the Formula 1 championship?",
+      "relevant_pages": []
+    },
+    {
+      "id": "q23",
+      "query_type": "irrelevant",
+      "question": "quantum blockchain machine learning trading",
+      "relevant_pages": []
+    },
+    {
+      "id": "q24",
+      "query_type": "irrelevant",
+      "question": "recipe for chocolate cake frosting",
+      "relevant_pages": []
+    },
+    {
+      "id": "q25",
+      "query_type": "irrelevant",
+      "question": "capital city of France tourism",
+      "relevant_pages": []
     }
   ]
 }
