@@ -861,9 +861,9 @@ Next checkpoint:
 CHECKPOINT 15 - DOCUMENTATION
 -----------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: e104d6ee checkpoint: add project README and documentation
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -884,3 +884,49 @@ Important documentation decisions:
 
 Next checkpoint:
 - Final validation: full test suite, Ollama E2E, evaluation, git verification.
+
+
+CHECKPOINT 16 - FINAL VALIDATION
+--------------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Ran final validation suite; no code or config changes required.
+- Updated description.txt with final test counts and project readiness status.
+
+Validation performed:
+1. Complete non-LLM test suite (excludes test_generation_llm.py,
+   test_rag_pipeline.py).
+2. Live Ollama end-to-end test (test_rag_pipeline.py, qwen3:8b).
+3. Expanded evaluation benchmark (test_evaluation.py).
+4. Git branch status and origin/RAG push verification.
+
+Test results:
+- Non-LLM suite: 44 passed in 20.22s.
+- Ollama E2E: 1 passed in 35.22s.
+  - PDF indexed: 2 pages, 3 chunks (ChromaDB + BM25).
+  - Answer correctly identified Max Verstappen with page 1 and 2 sources.
+- Evaluation: 2 passed in 16.18s.
+  - vector:  Recall@1=0.802, Recall@3=0.976, Recall@5=1.000, MRR=0.976
+  - bm25:    Recall@1=0.849, Recall@3=1.000, Recall@5=1.000, MRR=1.000
+  - hybrid:  Recall@1=0.849, Recall@3=1.000, Recall@5=1.000, MRR=1.000
+
+Pipeline verification:
+- PDF -> indexing (vector + BM25) -> hybrid retrieval -> generation -> sources:
+  confirmed working end-to-end.
+
+Git status:
+- Branch: RAG (tracking origin/RAG, up to date after this checkpoint push).
+- No staged production code changes; only description.txt updated.
+
+Final project readiness status: PRODUCTION-READY on RAG branch
+
+Checkpoints completed (phase 2): 12, 13, 14, 15, 16
+Total test files in rag/tests/: 19
+Non-LLM tests passing: 44
+LLM E2E tests passing: 1 (test_rag_pipeline.py)
+Remaining optional follow-up: test_generation_llm.py (not required for pipeline validation)
