@@ -659,9 +659,9 @@ Next checkpoint:
 CHECKPOINT 11 - FULL HYBRID VALIDATION
 --------------------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: d0cf600c checkpoint: validate full hybrid pipeline
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -700,3 +700,42 @@ Architecture after this checkpoint:
 
 Remaining follow-up:
 - Re-run test_rag_pipeline.py when Ollama qwen3:8b responds reliably.
+
+
+FINAL END-TO-END OLLAMA VALIDATION
+----------------------------------
+Status: COMPLETE
+Git commit: Pending - assigned by this validation log commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What was verified:
+- Full hybrid RAG pipeline with live Ollama generation using qwen3:8b.
+- No changes to hybrid retrieval architecture, APIs, folder structure, or
+  generation layer.
+
+Environment checked before test:
+- Ollama HTTP API reachable at http://127.0.0.1:11434 (HTTP 200).
+- Model qwen3:8b present locally (5.2 GB).
+
+Test executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_rag_pipeline.py -q -s
+
+Test results:
+- 1 passed in 54.48s.
+- process_document indexed sample.pdf: 2 pages, 3 chunks (ChromaDB + BM25).
+- ask_question returned a non-empty answer and non-empty page-level sources.
+- Answer correctly identified Max Verstappen from retrieved context.
+- Sources included pages 1 and 2 from the sample document.
+
+Diagnosis:
+- The earlier baseline stall (>401s, interrupted) was an Ollama environment
+  responsiveness issue, not a hybrid pipeline regression.
+- Current run completed normally; no code or config changes required.
+
+Code changes:
+- None. description.txt updated only.
+
+Final project status: COMPLETE
