@@ -791,9 +791,9 @@ Next checkpoint:
 CHECKPOINT 13 - EVALUATION ANALYSIS
 -----------------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: 871b8578 checkpoint: document retrieval evaluation analysis
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -822,3 +822,37 @@ Test results:
 
 Next checkpoint:
 - Add robustness tests for edge cases without changing working production code.
+
+
+CHECKPOINT 14 - ROBUSTNESS TESTING
+------------------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Added rag/tests/test_robustness.py covering empty documents, irrelevant queries,
+  exact keyword, semantic, duplicate content, multi-page retrieval, and empty
+  page chunking.
+- No production code changes; no defects found requiring fixes.
+
+Edge cases covered:
+- Empty/missing index -> empty retrieval and sources (expected).
+- Irrelevant query -> in-document chunks returned; prompt handles no-answer
+  (expected, not a defect).
+- Exact keyword -> literal-match chunk present in BM25 results.
+- Semantic query -> vector mode surfaces paraphrase-aligned chunk.
+- Duplicate text on multiple pages -> sources deduplicate by page.
+- Multi-page query -> hybrid top-3 can include multiple relevant pages.
+- Whitespace-only PDF page -> chunk_pages returns no chunks (expected).
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_robustness.py -q
+
+Test results:
+- 7 passed in 12.27s.
+
+Next checkpoint:
+- Add README and update project documentation.
