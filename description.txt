@@ -744,9 +744,9 @@ Final project status: COMPLETE
 CHECKPOINT 12 - EXPAND EVALUATION
 ---------------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: 9b1ce623 checkpoint: expand retrieval evaluation dataset
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -786,3 +786,39 @@ Test results:
 
 Next checkpoint:
 - Produce honest Vector vs BM25 vs Hybrid analysis and document limitations.
+
+
+CHECKPOINT 13 - EVALUATION ANALYSIS
+-----------------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Added rag/evaluation/ANALYSIS.md with honest Vector vs BM25 vs Hybrid comparison.
+- Added rag/tests/test_evaluation_analysis.py to verify analysis documentation.
+- No changes to retrieval code or metrics manipulation.
+
+Key findings:
+- BM25 and Hybrid tie as best overall (Recall@1=0.849, MRR=1.0).
+- Vector trails slightly (Recall@1=0.802, MRR=0.976), mainly on semantic q09.
+- Hybrid does NOT exceed BM25 on this dataset; identical aggregate scores.
+- All modes struggle equally on multi-page Recall@1 (0.5) by metric design.
+- Exact-keyword and mixed query types perform similarly across all modes.
+
+Limitations documented:
+- Small synthetic single-document corpus.
+- Irrelevant queries not scored; retrieval still returns in-document chunks.
+- Multi-page Recall@1 understates retrieval when several pages are relevant.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_evaluation_analysis.py -q
+
+Test results:
+- 1 passed.
+
+Next checkpoint:
+- Add robustness tests for edge cases without changing working production code.
