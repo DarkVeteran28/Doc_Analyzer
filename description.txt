@@ -827,9 +827,9 @@ Next checkpoint:
 CHECKPOINT 14 - ROBUSTNESS TESTING
 ------------------------------------
 Status: COMPLETED
-Git commit: Pending - assigned by this checkpoint commit
+Git commit: b429badd checkpoint: add retrieval robustness tests
 Git branch: RAG
-Git push: Pending
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
 Date: 2026-09-09
 
 What changed:
@@ -856,3 +856,31 @@ Test results:
 
 Next checkpoint:
 - Add README and update project documentation.
+
+
+CHECKPOINT 15 - DOCUMENTATION
+-----------------------------
+Status: COMPLETED
+Git commit: Pending - assigned by this checkpoint commit
+Git branch: RAG
+Git push: Pending
+Date: 2026-09-09
+
+What changed:
+- Added README.md with architecture, hybrid rationale, BM25/vector roles, RRF,
+  retrieval modes, evaluation methodology, setup, and testing instructions.
+- Updated description.txt with checkpoints 12-15 summary.
+
+Files added:
+- README.md
+
+Files modified:
+- description.txt
+
+Important documentation decisions:
+- Documented that Hybrid matches BM25 on expanded eval (not universally superior).
+- Documented irrelevant-query behavior and no confidence gate by design.
+- Preserved existing API signatures and folder structure in docs.
+
+Next checkpoint:
+- Final validation: full test suite, Ollama E2E, evaluation, git verification.
