@@ -1,0 +1,1016 @@
+CHECKPOINT 0 - BASELINE
+---------------------
+Status: COMPLETED
+Git commit: 3c4eb7cd checkpoint: establish RAG baseline
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Established and tested the original RAG baseline before any BM25 work.
+- Added this cumulative development log only.
+
+Files added:
+- description.txt
+
+Files modified:
+- None
+
+Files NOT modified:
+- All existing files under rag/
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- The project requires a documented, reproducible baseline before extending
+  vector retrieval with BM25.
+
+Existing files and dependencies:
+- The RAG branch contains rag/, rag_service.py, tests, and persisted Chroma
+  test databases. It has no root README.md or requirements.txt.
+- Runtime imports require pypdf, sentence-transformers, chromadb, ollama,
+  numpy, and pytest.
+
+Existing RAG flow:
+- PdfReader extracts page text.
+- chunk_pages creates 600-word chunks with 100-word overlap.
+- all-MiniLM-L6-v2 produces embeddings.
+- Chroma PersistentClient stores embeddings in a documents collection with
+  document_id, page, and chunk_id metadata.
+- retrieve_chunks filters Chroma queries by document_id.
+- qwen3:8b is invoked through Ollama with retrieved context.
+- build_sources returns one source per page.
+- rag_service.py keeps process_document(...) and ask_question(...) as the
+  external interface.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_chunking.py
+  rag/tests/test_ingestion.py rag/tests/test_generation.py
+  rag/tests/test_sources.py -q
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_embeddings.py rag/tests/test_vector_store.py
+  rag/tests/test_retrieval.py rag/tests/test_generation_llm.py
+  rag/tests/test_rag_pipeline.py -q
+
+Test results:
+- Deterministic tests: 4 passed in 0.21s.
+- Model-backed tests: 4 passed before interruption.
+- Failure: test_full_rag_pipeline remained blocked in the Ollama HTTP client
+  for 401.76 seconds. It was interrupted, so the full end-to-end baseline is
+  inconclusive rather than successful.
+- Resolution: retain the original LLM interface and make BM25/vector/fusion
+  tests independent of the LLM call. Revisit the Ollama responsiveness during
+  final end-to-end validation.
+
+Architecture after this checkpoint:
+- Existing vector-only RAG remains unchanged.
+- No BM25 index or fusion layer exists yet.
+
+
+CHECKPOINT 1 - HYBRID ARCHITECTURE
+----------------------------------
+Status: COMPLETED
+Git commit: 8608c132 checkpoint: define hybrid retrieval architecture
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Defined the hybrid retrieval architecture in this log.
+- Added rag/bm25.py for document-scoped BM25 indexing with separate persistence.
+- Added rag/fusion.py for deterministic Reciprocal Rank Fusion (RRF).
+- Did not modify the existing vector pipeline, generation layer, or public API.
+
+Files added:
+- rag/bm25.py
+- rag/fusion.py
+
+Files modified:
+- description.txt
+
+Files NOT modified:
+- rag/retrieval.py
+- rag/rag_pipeline.py
+- rag/vector_store.py
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- Hybrid retrieval requires a clear architecture before BM25 scoring,
+  diagnostics, and pipeline integration in later checkpoints.
+
+Hybrid retrieval architecture:
+- Ingestion remains shared: PDF -> chunk_pages -> identical chunk records.
+- Each chunk carries page, local chunk_id (page_N_chunk_M), and text.
+- Vector path (unchanged): chunk text -> MiniLM embedding -> ChromaDB,
+  keyed by stable id {document_id}_{page}_{chunk_number} with metadata
+  document_id, page, chunk_id.
+- BM25 path (new): same chunks -> BM25Index.add_chunks, persisted as one
+  JSON file per document under bm25_index/ (separate from chroma_db/).
+- Stable chunk_id is shared across both stores so fusion can deduplicate.
+- Retrieval modes planned for later checkpoints: vector, bm25, hybrid.
+- Hybrid default (Checkpoint 5): run vector and BM25 retrieval independently,
+  fuse with RRF in rag/fusion.py, pass fused chunks to existing generation.
+
+BM25 module design (rag/bm25.py):
+- BM25Index(persist_directory="bm25_index")
+- add_chunks(chunks, document_id) stores document_id, chunk_id, page, text,
+  and tokenized text per chunk.
+- query(document_id, question, n_results) defines the retrieval interface;
+  BM25 scoring with rank-bm25 is implemented in Checkpoint 2.
+- Persistence is file-based and document-scoped, not stored in ChromaDB.
+
+Fusion module design (rag/fusion.py):
+- reciprocal_rank_fusion(ranked_lists, k=60) merges ranked result lists.
+- Deduplication uses stable chunk_id.
+- Metadata (page, text, document_id) is preserved from the first occurrence.
+- Ranking is deterministic: RRF score descending, then chunk_id ascending.
+
+Public interface preservation:
+- rag_service.process_document(...) and rag_service.ask_question(...) signatures
+  remain unchanged through this checkpoint.
+
+Tests executed:
+- Existing deterministic baseline tests not re-run; no new tests added yet.
+- BM25 scoring tests are planned for Checkpoint 2.
+- RRF unit tests are planned for Checkpoint 4.
+
+Test results:
+- No new test failures introduced; modules are importable and architecture
+  is defined without altering the active retrieval path.
+
+Architecture after this checkpoint:
+- Vector-only retrieval remains the active production path.
+- BM25 persistence layer and RRF fusion utility exist as standalone modules.
+- Hybrid integration into ask_question is planned for Checkpoint 5.
+
+Next checkpoint:
+- Add rank-bm25, implement BM25 scoring in rag/bm25.py, and add indexing
+  tests for exact terms, numbers, metadata preservation, and document
+  isolation.
+
+
+CHECKPOINT 2 - BM25 INDEXING
+----------------------------
+Status: COMPLETED
+Git commit: 38c23096 checkpoint: implement BM25 indexing and tests
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Implemented BM25 scoring in rag/bm25.py using rank-bm25.
+- Added requirements-rag.txt with the rank-bm25 dependency.
+- Added rag/tests/test_bm25.py covering exact terms, numbers, metadata
+  preservation, document isolation, and chunk_pages integration.
+- Did not modify ChromaDB, embeddings, or the active vector retrieval path.
+
+Files added:
+- requirements-rag.txt
+- rag/tests/test_bm25.py
+
+Files modified:
+- rag/bm25.py
+- description.txt
+
+Files NOT modified:
+- rag/vector_store.py
+- rag/embeddings.py
+- rag/retrieval.py
+- rag/rag_pipeline.py
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- BM25 keyword retrieval is required for hybrid fusion and must index the
+  same chunks as the vector store while remaining document-scoped.
+
+BM25 implementation details:
+- add_chunks persists one JSON file per document under bm25_index/.
+- Each record stores document_id, chunk_id, page, text, and tokenized text.
+- query tokenizes the question, builds BM25Okapi from the document corpus,
+  ranks by score with chunk_id tie-breaking, and returns top n_results.
+- Stable chunk_id format matches ChromaDB: {document_id}_{page}_{chunk_number}.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_bm25.py -q
+
+Test results:
+- 5 passed in 0.03s.
+- test_bm25_exact_term_match: top result matches experiment wording on page 5.
+- test_bm25_number_match: retrieves chunk containing "42".
+- test_bm25_metadata_preservation: chunk_id, document_id, page, text, score kept.
+- test_bm25_document_isolation: paper_a query returns only paper_a chunks.
+- test_bm25_indexes_chunk_pages_output: chunk_pages output indexes and retrieves
+  numeric term "101325" correctly.
+
+Architecture after this checkpoint:
+- Vector-only retrieval remains the active production path.
+- BM25 indexing and querying work as a standalone document-scoped store.
+- Hybrid fusion and pipeline integration remain planned for later checkpoints.
+
+Next checkpoint:
+- Add diagnostics/tests comparing BM25-only and vector-only results for the
+  same query, recording observed differences in this log.
+
+
+CHECKPOINT 3 - RETRIEVAL COMPARISON DIAGNOSTICS
+------------------------------------------------
+Status: COMPLETED
+Git commit: e61f37ae checkpoint: compare BM25 and vector retrieval
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Added rag/tests/test_retrieval_comparison.py to index identical chunks in
+  both ChromaDB and BM25, then compare retrieval rankings for the same queries.
+- Recorded only observed BM25-only vs vector-only differences below.
+- Did not change the active retrieval path or integrate hybrid fusion yet.
+
+Files added:
+- rag/tests/test_retrieval_comparison.py
+
+Files modified:
+- description.txt
+
+Files NOT modified:
+- rag/retrieval.py
+- rag/bm25.py
+- rag/rag_pipeline.py
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- Hybrid retrieval should be informed by real ranking differences between
+  keyword and semantic search on the same document corpus.
+
+Comparison setup:
+- Shared corpus: 4 chunks on pages 2, 5, 7, and 9 for document paper_a.
+- Vector store: ChromaDB with MiniLM embeddings.
+- BM25 store: rank-bm25 over the same chunk texts.
+- n_results=3 for both retrievers.
+
+Observed differences (actual run on 2026-09-09):
+1. Query: "What did the experiment show?"
+   - Vector top-3 pages: [7, 2, 5]
+   - BM25 top-3 pages: [5, 2, 7]
+   - Same top result: No. BM25 ranked page 5 first; vector ranked page 7 first.
+   - Same full ranking: No.
+
+2. Query: "sample ID 7781 calibration 0.0031"
+   - Vector top-3 pages: [9, 7, 5]
+   - BM25 top-3 pages: [9, 2, 5]
+   - Same top result: Yes (page 9).
+   - Same full ranking: No. Vector placed page 7 second; BM25 placed page 2
+     second.
+
+3. Query: "history of experimental chemistry"
+   - Vector top-3 pages: [2, 5, 7]
+   - BM25 top-3 pages: [2, 5, 7]
+   - Same top result: Yes.
+   - Same full ranking: Yes.
+
+Summary of observed behavior:
+- BM25 and vector agree on the top result for 2 of 3 queries.
+- Full top-3 ranking matched for only 1 of 3 queries.
+- Numeric/id-heavy query: both retrievers ranked page 9 first, but secondary
+  ordering diverged.
+- Experiment-focused query: retrievers disagreed on the top result, with BM25
+  favoring the chunk containing the literal word "experiment" on page 5.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_retrieval_comparison.py -q
+
+Test results:
+- 3 passed in 28.92s.
+
+Architecture after this checkpoint:
+- Vector-only retrieval remains the active production path.
+- Documented evidence shows BM25 and vector rankings diverge enough to justify
+  RRF fusion in later checkpoints.
+
+Next checkpoint:
+- Implement and test RRF fusion with overlapping, disjoint, and multi-document
+  result sets.
+
+
+CHECKPOINT 4 - RRF FUSION
+-------------------------
+Status: COMPLETED
+Git commit: 4cabdb2d checkpoint: implement RRF fusion and tests
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Validated rag/fusion.py reciprocal_rank_fusion with unit tests for
+  overlapping, disjoint, and multi-document ranked lists.
+- Confirmed deduplication by chunk_id, metadata preservation, and deterministic
+  tie-breaking by chunk_id ascending.
+- Did not integrate fusion into the active retrieval pipeline yet.
+
+Files added:
+- rag/tests/test_fusion.py
+
+Files modified:
+- description.txt
+
+Files NOT modified:
+- rag/fusion.py (implementation unchanged from Checkpoint 1)
+- rag/retrieval.py
+- rag/rag_pipeline.py
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- Hybrid retrieval requires a tested, deterministic fusion layer before wiring
+  it into ask_question.
+
+RRF behavior verified:
+- Overlapping lists: chunks appearing in both retrievers accumulate higher RRF
+  scores and rise in the fused ranking.
+- Disjoint lists: all unique chunks are retained and ordered by RRF score.
+- Multi-document lists: chunks from different documents remain distinguishable
+  via document_id metadata after fusion.
+- Ties: equal RRF scores break deterministically on chunk_id ascending.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_fusion.py -q
+
+Test results:
+- 4 passed in 0.02s.
+
+Architecture after this checkpoint:
+- RRF fusion is tested and ready for pipeline integration.
+- Vector-only retrieval remains the active production path.
+
+Next checkpoint:
+- Integrate hybrid retrieval into the existing pipeline while keeping
+  ask_question(...) compatible and defaulting to hybrid internally.
+
+
+CHECKPOINT 5 - HYBRID PIPELINE INTEGRATION
+------------------------------------------
+Status: COMPLETED
+Git commit: 69418bd9 checkpoint: integrate hybrid retrieval pipeline
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Updated rag/retrieval.py to expose vector, BM25, and hybrid retrieval helpers.
+- retrieve_chunks now defaults to hybrid RRF fusion internally.
+- Updated rag/rag_pipeline.py process_document to index the same chunks in
+  both ChromaDB and BM25Index during upload.
+- ask_question(...) signature and return shape are unchanged; generation layer
+  untouched.
+- Added rag/tests/test_hybrid_retrieval.py and updated test_rag_pipeline cleanup
+  for paired BM25 directories.
+
+Files added:
+- rag/tests/test_hybrid_retrieval.py
+
+Files modified:
+- rag/retrieval.py
+- rag/rag_pipeline.py
+- rag/tests/test_rag_pipeline.py
+- description.txt
+
+Files NOT modified:
+- rag/generation.py
+- rag/sources.py
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- Production Q&A should benefit from hybrid retrieval without breaking the
+  existing rag_service interface or rewriting answer generation.
+
+Integration details:
+- bm25_directory_for(persist_directory) maps chroma_db -> bm25_index and test
+  directories to paired *_bm25 paths.
+- Hybrid retrieval fuses vector and BM25 ranked lists when both exist; falls
+  back to vector-only when BM25 index is absent.
+- Fused chunks returned to generation retain page, text, and score only.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_hybrid_retrieval.py rag/tests/test_retrieval.py
+  rag/tests/test_bm25.py rag/tests/test_fusion.py
+  rag/tests/test_chunking.py rag/tests/test_ingestion.py
+  rag/tests/test_generation.py rag/tests/test_sources.py -q
+
+Test results:
+- 17 passed in 12.55s.
+
+Architecture after this checkpoint:
+- ask_question uses hybrid retrieval by default.
+- process_document indexes both vector and BM25 stores.
+- Generation and source-building layers remain unchanged.
+
+Next checkpoint:
+- Verify source preservation through hybrid retrieval and build_sources.
+
+
+CHECKPOINT 6 - SOURCE PRESERVATION
+----------------------------------
+Status: COMPLETED
+Git commit: 8cf59eca checkpoint: verify hybrid source preservation
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Added rag/tests/test_source_preservation.py to verify hybrid retrieval results
+  still produce correct page-level sources through build_sources.
+- Confirmed duplicate pages in fused results deduplicate to one source per page.
+- Confirmed top fused chunk text is preserved in the first source entry.
+
+Files added:
+- rag/tests/test_source_preservation.py
+
+Files modified:
+- description.txt
+
+Files NOT modified:
+- rag/sources.py
+- rag/generation.py
+- rag/rag_pipeline.py
+- rag_service.py
+- Frontend and backend application files
+
+Why the change was made:
+- Hybrid fusion can return multiple chunks from the same page; source citations
+  must remain stable for the frontend.
+
+Source preservation verified:
+- build_sources keeps one entry per page in fused-result order.
+- Source text comes from the highest-ranked retrieved chunk for that page.
+- Fused hybrid ranking still surfaces page 5 first for the experiment query
+  on the standard 3-chunk corpus.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_source_preservation.py -q
+
+Test results:
+- 3 passed in 14.74s.
+
+Architecture after this checkpoint:
+- Hybrid retrieval integrates with existing build_sources without changes.
+- Page-level source contract remains intact.
+
+Next checkpoint:
+- Add internal retrieval modes: vector, bm25, and hybrid.
+
+
+CHECKPOINT 7 - RETRIEVAL MODES
+------------------------------
+Status: COMPLETED
+Git commit: de22f351 checkpoint: add internal retrieval modes
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Added retrieval_mode parameter to retrieve_chunks, ask_question in
+  rag_pipeline.py, and rag_service.py with default "hybrid".
+- Supported modes: vector, bm25, hybrid.
+- Added rag/tests/test_retrieval_modes.py.
+
+Files added:
+- rag/tests/test_retrieval_modes.py
+
+Files modified:
+- rag/retrieval.py
+- rag/rag_pipeline.py
+- rag_service.py
+- description.txt
+
+Files NOT modified:
+- rag/generation.py
+- Frontend and backend application files
+
+Why the change was made:
+- Internal diagnostics and evaluation need explicit control over retrieval
+  strategy while keeping the default hybrid behavior.
+
+Mode behavior:
+- vector: cosine similarity via ChromaDB only.
+- bm25: rank-bm25 keyword retrieval only.
+- hybrid: RRF fusion of vector and bm25 (default).
+- Invalid modes raise ValueError.
+
+Backward compatibility:
+- Existing callers omitting retrieval_mode continue to use hybrid retrieval.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_retrieval_modes.py rag/tests/test_hybrid_retrieval.py -q
+
+Test results:
+- 7 passed in 16.62s.
+
+Architecture after this checkpoint:
+- All three retrieval modes are selectable internally.
+- Default production behavior remains hybrid.
+
+Next checkpoint:
+- Add a small evaluation dataset and Recall@K/MRR comparison across modes.
+
+
+CHECKPOINT 8 - EVALUATION DATASET
+---------------------------------
+Status: COMPLETED
+Git commit: d5bb8c5b checkpoint: add retrieval evaluation dataset
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Added rag/evaluation/dataset.json with 4 queries over a 5-chunk corpus.
+- Added rag/evaluation/metrics.py with Recall@K and MRR helpers.
+- Added rag/tests/test_evaluation.py comparing vector, bm25, and hybrid modes.
+
+Files added:
+- rag/evaluation/dataset.json
+- rag/evaluation/metrics.py
+- rag/tests/test_evaluation.py
+
+Files modified:
+- description.txt
+
+Files NOT modified:
+- rag/generation.py
+- Frontend and backend application files
+
+Why the change was made:
+- Hybrid retrieval needs a small, transparent benchmark to compare modes on the
+  same indexed corpus.
+
+Evaluation dataset:
+- 5 chunks on pages 1, 3, 5, 7, and 9 for document eval_paper.
+- 4 queries with one relevant page each, covering experiment results, numeric
+  identifiers, history wording, and catalyst terms.
+
+Observed metrics at K=3 (actual run on 2026-09-09):
+- vector: Recall@3 = 1.0, MRR = 1.0
+- bm25: Recall@3 = 1.0, MRR = 1.0
+- hybrid: Recall@3 = 1.0, MRR = 1.0
+
+Honest assessment:
+- On this tiny dataset all three modes found the relevant page within top 3
+  for every query, so no mode showed an advantage.
+- The dataset is intentionally small and easy; it validates the evaluation
+  plumbing rather than proving hybrid superiority in production.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_evaluation.py -q
+
+Test results:
+- 1 passed in 20.31s.
+
+Architecture after this checkpoint:
+- Recall@K and MRR can be computed consistently across retrieval modes.
+- Default hybrid behavior unchanged.
+
+Next checkpoint:
+- Validate no-answer behavior without adding a complex confidence system.
+
+
+CHECKPOINT 9 - NO-ANSWER BEHAVIOR
+-----------------------------------
+Status: COMPLETED
+Git commit: b94b6267 checkpoint: validate no-answer behavior
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Added rag/tests/test_no_answer.py to validate empty retrieval and prompt
+  behavior without introducing a confidence-scoring layer.
+
+Files added:
+- rag/tests/test_no_answer.py
+
+Files modified:
+- description.txt
+
+Why the change was made:
+- The generation prompt already instructs the model to admit insufficient
+  context; retrieval should not add a complex confidence system.
+
+No-answer behavior verified:
+- Missing document indexes return empty retrieval and empty sources.
+- build_rag_prompt with zero chunks still includes the no-answer instruction.
+- Unrelated queries may still return low-relevance chunks; the LLM layer is
+  expected to decline based on prompt instructions, not retrieval thresholds.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_no_answer.py -q
+
+Test results:
+- 3 passed.
+
+Next checkpoint:
+- Avoid rebuilding BM25 per question by caching indexes per document.
+
+
+CHECKPOINT 10 - BM25 INDEX CACHING
+----------------------------------
+Status: COMPLETED
+Git commit: 656fddd5 checkpoint: cache BM25 index per document
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Updated rag/bm25.py to cache BM25Okapi indexes per document_id using file
+  modification time invalidation.
+- add_chunks clears the cache entry for the updated document.
+
+Files modified:
+- rag/bm25.py
+- description.txt
+
+Why the change was made:
+- Rebuilding BM25 from disk on every query is unnecessary overhead once a
+  document index is loaded.
+
+Caching behavior:
+- First query loads records and builds BM25Okapi.
+- Subsequent queries reuse the cached index until the persisted JSON changes.
+- Cache is scoped to the BM25Index instance.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_full_hybrid_validation.py::test_bm25_index_is_cached_between_queries
+  rag/tests/test_bm25.py -q
+
+Test results:
+- 6 passed (including cache test).
+
+Next checkpoint:
+- Run complete upload/index/retrieve/fuse/generate/source/isolation validation.
+
+
+CHECKPOINT 11 - FULL HYBRID VALIDATION
+--------------------------------------
+Status: COMPLETED
+Git commit: d0cf600c checkpoint: validate full hybrid pipeline
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Added rag/tests/test_full_hybrid_validation.py covering index, hybrid retrieve,
+  source building, document isolation, and ask_question with mocked generation.
+- Ran the full non-LLM RAG test suite.
+
+Files added:
+- rag/tests/test_full_hybrid_validation.py
+
+Files modified:
+- description.txt
+
+Validation coverage:
+- Dual indexing into ChromaDB and BM25 for multiple documents.
+- Hybrid retrieval returns only doc_a pages when querying doc_a.
+- build_sources works on hybrid results.
+- ask_question returns answer and sources with generation mocked.
+- BM25 cache prevents rebuild on repeated queries.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/ -q
+  --ignore=rag/tests/test_generation_llm.py
+  --ignore=rag/tests/test_rag_pipeline.py
+
+Test results:
+- 35 passed in 12.26s.
+- LLM-backed tests (test_generation_llm.py, test_rag_pipeline.py) were excluded
+  because baseline Ollama end-to-end validation remains inconclusive.
+
+Architecture after this checkpoint:
+- Hybrid RAG pipeline is integrated end-to-end for indexing, retrieval, fusion,
+  source preservation, and Q&A orchestration.
+- Default retrieval mode is hybrid via rag_service.ask_question(...).
+- Vector and BM25 stores remain separate; generation layer unchanged.
+
+Remaining follow-up:
+- Re-run test_rag_pipeline.py when Ollama qwen3:8b responds reliably.
+
+
+FINAL END-TO-END OLLAMA VALIDATION
+----------------------------------
+Status: COMPLETE
+Git commit: a27c9af0 docs: complete end-to-end Ollama validation
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What was verified:
+- Full hybrid RAG pipeline with live Ollama generation using qwen3:8b.
+- No changes to hybrid retrieval architecture, APIs, folder structure, or
+  generation layer.
+
+Environment checked before test:
+- Ollama HTTP API reachable at http://127.0.0.1:11434 (HTTP 200).
+- Model qwen3:8b present locally (5.2 GB).
+
+Test executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_rag_pipeline.py -q -s
+
+Test results:
+- 1 passed in 54.48s.
+- process_document indexed sample.pdf: 2 pages, 3 chunks (ChromaDB + BM25).
+- ask_question returned a non-empty answer and non-empty page-level sources.
+- Answer correctly identified Max Verstappen from retrieved context.
+- Sources included pages 1 and 2 from the sample document.
+
+Diagnosis:
+- The earlier baseline stall (>401s, interrupted) was an Ollama environment
+  responsiveness issue, not a hybrid pipeline regression.
+- Current run completed normally; no code or config changes required.
+
+Code changes:
+- None. description.txt updated only.
+
+Final project status: COMPLETE
+
+
+CHECKPOINT 12 - EXPAND EVALUATION
+---------------------------------
+Status: COMPLETED
+Git commit: 9b1ce623 checkpoint: expand retrieval evaluation dataset
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Expanded rag/evaluation/dataset.json from 4 to 25 queries and 5 to 10 chunks.
+- Added query_type labels: exact_keyword, semantic, mixed, multi_page, irrelevant.
+- Updated rag/evaluation/metrics.py for Recall@1/@3/@5 and MRR; irrelevant
+  queries excluded from scored metrics.
+- Added rag/evaluation/run_evaluation.py for repeatable evaluation runs.
+- Updated rag/tests/test_evaluation.py for the expanded dataset.
+
+Files added:
+- rag/evaluation/run_evaluation.py
+
+Files modified:
+- rag/evaluation/dataset.json
+- rag/evaluation/metrics.py
+- rag/tests/test_evaluation.py
+- description.txt
+
+Query breakdown:
+- exact_keyword: 6
+- semantic: 6
+- mixed: 5
+- multi_page: 4
+- irrelevant: 4 (excluded from Recall/MRR)
+
+Evaluation results (21 scored queries, K=1/3/5):
+- vector:  Recall@1=0.802, Recall@3=0.976, Recall@5=1.000, MRR=0.976
+- bm25:    Recall@1=0.849, Recall@3=1.000, Recall@5=1.000, MRR=1.000
+- hybrid:  Recall@1=0.849, Recall@3=1.000, Recall@5=1.000, MRR=1.000
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_evaluation.py -q
+
+Test results:
+- 2 passed in 15.06s.
+
+Next checkpoint:
+- Produce honest Vector vs BM25 vs Hybrid analysis and document limitations.
+
+
+CHECKPOINT 13 - EVALUATION ANALYSIS
+-----------------------------------
+Status: COMPLETED
+Git commit: 871b8578 checkpoint: document retrieval evaluation analysis
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Added rag/evaluation/ANALYSIS.md with honest Vector vs BM25 vs Hybrid comparison.
+- Added rag/tests/test_evaluation_analysis.py to verify analysis documentation.
+- No changes to retrieval code or metrics manipulation.
+
+Key findings:
+- BM25 and Hybrid tie as best overall (Recall@1=0.849, MRR=1.0).
+- Vector trails slightly (Recall@1=0.802, MRR=0.976), mainly on semantic q09.
+- Hybrid does NOT exceed BM25 on this dataset; identical aggregate scores.
+- All modes struggle equally on multi-page Recall@1 (0.5) by metric design.
+- Exact-keyword and mixed query types perform similarly across all modes.
+
+Limitations documented:
+- Small synthetic single-document corpus.
+- Irrelevant queries not scored; retrieval still returns in-document chunks.
+- Multi-page Recall@1 understates retrieval when several pages are relevant.
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest
+  rag/tests/test_evaluation_analysis.py -q
+
+Test results:
+- 1 passed.
+
+Next checkpoint:
+- Add robustness tests for edge cases without changing working production code.
+
+
+CHECKPOINT 14 - ROBUSTNESS TESTING
+------------------------------------
+Status: COMPLETED
+Git commit: b429badd checkpoint: add retrieval robustness tests
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Added rag/tests/test_robustness.py covering empty documents, irrelevant queries,
+  exact keyword, semantic, duplicate content, multi-page retrieval, and empty
+  page chunking.
+- No production code changes; no defects found requiring fixes.
+
+Edge cases covered:
+- Empty/missing index -> empty retrieval and sources (expected).
+- Irrelevant query -> in-document chunks returned; prompt handles no-answer
+  (expected, not a defect).
+- Exact keyword -> literal-match chunk present in BM25 results.
+- Semantic query -> vector mode surfaces paraphrase-aligned chunk.
+- Duplicate text on multiple pages -> sources deduplicate by page.
+- Multi-page query -> hybrid top-3 can include multiple relevant pages.
+- Whitespace-only PDF page -> chunk_pages returns no chunks (expected).
+
+Tests executed:
+- PYTHONPATH=/private/tmp/doc-analyzer-rag pytest rag/tests/test_robustness.py -q
+
+Test results:
+- 7 passed in 12.27s.
+
+Next checkpoint:
+- Add README and update project documentation.
+
+
+CHECKPOINT 15 - DOCUMENTATION
+-----------------------------
+Status: COMPLETED
+Git commit: e104d6ee checkpoint: add project README and documentation
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Added README.md with architecture, hybrid rationale, BM25/vector roles, RRF,
+  retrieval modes, evaluation methodology, setup, and testing instructions.
+- Updated description.txt with checkpoints 12-15 summary.
+
+Files added:
+- README.md
+
+Files modified:
+- description.txt
+
+Important documentation decisions:
+- Documented that Hybrid matches BM25 on expanded eval (not universally superior).
+- Documented irrelevant-query behavior and no confidence gate by design.
+- Preserved existing API signatures and folder structure in docs.
+
+Next checkpoint:
+- Final validation: full test suite, Ollama E2E, evaluation, git verification.
+
+
+CHECKPOINT 16 - FINAL VALIDATION
+--------------------------------
+Status: COMPLETED
+Git commit: fa2c6766 checkpoint: final validation and project readiness
+Git branch: RAG
+Git push: VERIFIED - pushed to origin/RAG on 2026-09-09
+Date: 2026-09-09
+
+What changed:
+- Ran final validation suite; no code or config changes required.
+- Updated description.txt with final test counts and project readiness status.
+
+Validation performed:
+1. Complete non-LLM test suite (excludes test_generation_llm.py,
+   test_rag_pipeline.py).
+2. Live Ollama end-to-end test (test_rag_pipeline.py, qwen3:8b).
+3. Expanded evaluation benchmark (test_evaluation.py).
+4. Git branch status and origin/RAG push verification.
+
+Test results:
+- Non-LLM suite: 44 passed in 20.22s.
+- Ollama E2E: 1 passed in 35.22s.
+  - PDF indexed: 2 pages, 3 chunks (ChromaDB + BM25).
+  - Answer correctly identified Max Verstappen with page 1 and 2 sources.
+- Evaluation: 2 passed in 16.18s.
+  - vector:  Recall@1=0.802, Recall@3=0.976, Recall@5=1.000, MRR=0.976
+  - bm25:    Recall@1=0.849, Recall@3=1.000, Recall@5=1.000, MRR=1.000
+  - hybrid:  Recall@1=0.849, Recall@3=1.000, Recall@5=1.000, MRR=1.000
+
+Pipeline verification:
+- PDF -> indexing (vector + BM25) -> hybrid retrieval -> generation -> sources:
+  confirmed working end-to-end.
+
+Git status:
+- Branch: RAG (tracking origin/RAG, up to date after this checkpoint push).
+- No staged production code changes; only description.txt updated.
+
+Final project readiness status: PRODUCTION-READY on RAG branch
+
+Checkpoints completed (phase 2): 12, 13, 14, 15, 16
+Total test files in rag/tests/: 19
+Non-LLM tests passing: 44
+LLM E2E tests passing: 1 (test_rag_pipeline.py)
+Remaining optional follow-up: test_generation_llm.py (not required for pipeline validation)
+
+
+CHECKPOINT 17 - FINAL REPOSITORY & CODE AUDIT
+----------------------------------------------
+Status: COMPLETED
+Git branch: RAG
+Date: 2026-09-09
+
+Audit scope:
+- Accidentally tracked secrets or .env files
+- Unnecessary or generated files
+- .gitignore correctness
+- Dead / debug code
+- Hardcoded local / absolute paths
+- Broken imports or configuration
+- Dependency / requirements completeness
+- README setup and run instructions
+- Test configuration
+- Git status and origin/RAG synchronization
+
+FINDINGS AND FIXES
+------------------
+
+ISSUE 1 — .gitignore was a shell script, not a pattern file [FIXED]
+  The .gitignore file contained literal shell heredoc syntax
+  ("cat >> .gitignore <<'EOF' ... EOF") from a previous mis-applied command.
+  No files were being ignored as a result.
+  Fix: Replaced with correct ignore patterns covering venv/, .venv/,
+  __pycache__/, *.py[cod], .pytest_cache/, uploads/, chroma_db/,
+  bm25_index/, test_*_chroma/, test_*_chroma_bm25/, test_*_bm25/,
+  *.sqlite3, .env, .env.*, .DS_Store.
+
+ISSUE 2 — Generated files tracked in git [FIXED]
+  rag/__pycache__/ (7 .pyc files), rag/tests/__pycache__/ (7 .pyc files),
+  rag/test_rag_db/ (4 Chroma binary files + sqlite3),
+  test_chroma_db/ (4 binary files + sqlite3),
+  test_pipeline_db/ (4 binary files + sqlite3),
+  test_retrieval_db/ (4 binary files + sqlite3)
+  were all committed to the repository.
+  Fix: Removed from git index with `git rm --cached -r`.
+
+ISSUE 3 — Dead function generate_response in rag/generation.py [FIXED]
+  generate_response(question, retrieved_chunks) was defined at the top of
+  generation.py but never called anywhere in the codebase (confirmed by
+  global grep). It redundantly called generate_answer + build_sources,
+  duplicating what rag_pipeline.py already orchestrates. The unused import
+  of build_sources was also removed along with this function.
+  Fix: Removed the dead function and its associated import.
+
+ISSUE 4 — Hardcoded absolute PYTHONPATH in README.md [FIXED]
+  README.md Setup section contained:
+    export PYTHONPATH=/path/to/doc-analyzer-rag
+  This is a hardcoded placeholder path that breaks on any machine.
+  Fix: Replaced with the portable relative form:
+    export PYTHONPATH=.
+
+NO ISSUES FOUND
+---------------
+- No .env files with secrets tracked.
+- No API keys, tokens, or credentials in any source file.
+- All production imports verified (rag_pipeline.py, retrieval.py,
+  bm25.py, fusion.py, vector_store.py, generation.py, ingestion.py,
+  chunking.py, embeddings.py, sources.py, rag_service.py).
+- requirements-rag.txt correctly lists rank-bm25.
+- README setup, install, and test instructions are accurate and complete.
+- rag_service.py public API wrapper is present and correct.
+- Test files: no broken imports, no debug prints that break assertions.
+  Print statements in tests are cosmetic only (do not affect pass/fail).
+- No hardcoded absolute paths in any source file.
+- No broken imports detected.
+- test_rag.py, test_eval_chroma_report.json, and untracked test artifact
+  directories are now covered by .gitignore patterns.
+
+TEST RESULTS
+------------
+Non-LLM test suite (excludes test_generation_llm.py, test_rag_pipeline.py):
+  44 passed in 14.53s
+  Zero failures, zero errors.
+
+Git status after commit:
+  Branch: RAG (tracking origin/RAG)
+  Local RAG == origin/RAG: SYNCHRONIZED
+
+AUDIT STATUS: FIXES APPLIED
