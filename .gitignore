@@ -21,8 +21,7 @@ test_*_bm25/
 *.sqlite3
 
 # Evaluation report artifacts
-test_eval_chroma_report.json
-test_eval_expanded_chroma_report.json
+rag/evaluation/reports/
 
 # Environment variables
 .env
