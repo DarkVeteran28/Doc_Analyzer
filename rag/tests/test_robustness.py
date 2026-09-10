@@ -1,5 +1,7 @@
 import shutil
 
+from .conftest import TEST_ARTIFACTS
+
 from rag.bm25 import BM25Index
 from rag.chunking import chunk_pages
 from rag.embeddings import generate_embedding
@@ -28,7 +30,7 @@ def _index(chroma_dir, chunks, document_id="doc_a"):
 
 
 def test_robustness_empty_document_returns_no_results():
-    chroma_dir = "test_robust_empty_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_robust_empty_chroma"
     shutil.rmtree(chroma_dir, ignore_errors=True)
     shutil.rmtree(bm25_directory_for(chroma_dir), ignore_errors=True)
 
@@ -44,7 +46,7 @@ def test_robustness_empty_document_returns_no_results():
 
 
 def test_robustness_irrelevant_query_still_returns_document_chunks():
-    chroma_dir = "test_robust_irrelevant_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_robust_irrelevant_chroma"
     shutil.rmtree(chroma_dir, ignore_errors=True)
     shutil.rmtree(bm25_directory_for(chroma_dir), ignore_errors=True)
 
@@ -71,7 +73,7 @@ def test_robustness_irrelevant_query_still_returns_document_chunks():
 
 
 def test_robustness_exact_keyword_query_prefers_literal_match():
-    chroma_dir = "test_robust_exact_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_robust_exact_chroma"
     shutil.rmtree(chroma_dir, ignore_errors=True)
     shutil.rmtree(bm25_directory_for(chroma_dir), ignore_errors=True)
 
@@ -105,7 +107,7 @@ def test_robustness_exact_keyword_query_prefers_literal_match():
 
 
 def test_robustness_semantic_query_vector_mode():
-    chroma_dir = "test_robust_semantic_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_robust_semantic_chroma"
     shutil.rmtree(chroma_dir, ignore_errors=True)
     shutil.rmtree(bm25_directory_for(chroma_dir), ignore_errors=True)
 
@@ -135,7 +137,7 @@ def test_robustness_semantic_query_vector_mode():
 
 
 def test_robustness_duplicate_content_deduplicates_in_fusion():
-    chroma_dir = "test_robust_duplicate_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_robust_duplicate_chroma"
     shutil.rmtree(chroma_dir, ignore_errors=True)
     shutil.rmtree(bm25_directory_for(chroma_dir), ignore_errors=True)
 
@@ -168,7 +170,7 @@ def test_robustness_duplicate_content_deduplicates_in_fusion():
 
 
 def test_robustness_multi_page_retrieval_returns_multiple_pages():
-    chroma_dir = "test_robust_multipage_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_robust_multipage_chroma"
     shutil.rmtree(chroma_dir, ignore_errors=True)
     shutil.rmtree(bm25_directory_for(chroma_dir), ignore_errors=True)
 

@@ -4,19 +4,15 @@ from rag.rag_pipeline import (
     process_document,
     ask_question
 )
+from .conftest import TEST_ARTIFACTS
 
 
 def test_full_rag_pipeline():
 
-    test_db = "test_pipeline_db"
-    test_bm25_db = f"{test_db}_bm25"
+    test_db = f"{TEST_ARTIFACTS}/test_pipeline_db"
 
     shutil.rmtree(
         test_db,
-        ignore_errors=True
-    )
-    shutil.rmtree(
-        test_bm25_db,
         ignore_errors=True
     )
 

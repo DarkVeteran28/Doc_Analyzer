@@ -1,5 +1,6 @@
 import shutil
 
+from .conftest import TEST_ARTIFACTS
 from rag.bm25 import BM25Index
 from rag.embeddings import generate_embedding
 from rag.retrieval import (
@@ -66,7 +67,7 @@ def _index_both(chroma_dir, document_id="paper_a"):
 
 
 def test_retrieve_chunks_defaults_to_hybrid():
-    chroma_dir = "test_hybrid_default_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_hybrid_default_chroma"
     bm25_dir = _index_both(chroma_dir)
 
     hybrid_results = retrieve_chunks(
@@ -90,7 +91,7 @@ def test_retrieve_chunks_defaults_to_hybrid():
 
 
 def test_hybrid_fuses_vector_and_bm25_rankings():
-    chroma_dir = "test_hybrid_fusion_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_hybrid_fusion_chroma"
     bm25_dir = _index_both(chroma_dir)
     question = "What did the experiment show?"
 
@@ -126,7 +127,7 @@ def test_hybrid_fuses_vector_and_bm25_rankings():
 
 
 def test_hybrid_falls_back_to_vector_without_bm25_index():
-    chroma_dir = "test_hybrid_vector_only_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_hybrid_vector_only_chroma"
     shutil.rmtree(chroma_dir, ignore_errors=True)
     shutil.rmtree(bm25_directory_for(chroma_dir), ignore_errors=True)
 

@@ -1,5 +1,6 @@
 import shutil
 
+from .conftest import TEST_ARTIFACTS
 from rag.bm25 import BM25Index
 from rag.chunking import chunk_pages
 
@@ -34,7 +35,7 @@ def _sample_chunks():
 
 
 def test_bm25_exact_term_match():
-    test_dir = "test_bm25_exact"
+    test_dir = f"{TEST_ARTIFACTS}/test_bm25_exact"
     shutil.rmtree(test_dir, ignore_errors=True)
 
     index = BM25Index(persist_directory=test_dir)
@@ -53,7 +54,7 @@ def test_bm25_exact_term_match():
 
 
 def test_bm25_number_match():
-    test_dir = "test_bm25_numbers"
+    test_dir = f"{TEST_ARTIFACTS}/test_bm25_numbers"
     shutil.rmtree(test_dir, ignore_errors=True)
 
     index = BM25Index(persist_directory=test_dir)
@@ -72,7 +73,7 @@ def test_bm25_number_match():
 
 
 def test_bm25_metadata_preservation():
-    test_dir = "test_bm25_metadata"
+    test_dir = f"{TEST_ARTIFACTS}/test_bm25_metadata"
     shutil.rmtree(test_dir, ignore_errors=True)
 
     index = BM25Index(persist_directory=test_dir)
@@ -97,7 +98,7 @@ def test_bm25_metadata_preservation():
 
 
 def test_bm25_document_isolation():
-    test_dir = "test_bm25_isolation"
+    test_dir = f"{TEST_ARTIFACTS}/test_bm25_isolation"
     shutil.rmtree(test_dir, ignore_errors=True)
 
     index = BM25Index(persist_directory=test_dir)
@@ -131,7 +132,7 @@ def test_bm25_document_isolation():
 
 
 def test_bm25_indexes_chunk_pages_output():
-    test_dir = "test_bm25_chunk_pages"
+    test_dir = f"{TEST_ARTIFACTS}/test_bm25_chunk_pages"
     shutil.rmtree(test_dir, ignore_errors=True)
 
     pages = [

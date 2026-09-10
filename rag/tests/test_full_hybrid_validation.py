@@ -1,3 +1,4 @@
+from .conftest import TEST_ARTIFACTS
 from unittest.mock import patch
 
 import shutil
@@ -18,7 +19,7 @@ def test_bm25_index_is_cached_between_queries():
         build_calls["count"] += 1
         return original_build(self, records)
 
-    test_dir = "test_bm25_cache_dir"
+    test_dir = f"{TEST_ARTIFACTS}/test_bm25_cache_dir"
     shutil.rmtree(test_dir, ignore_errors=True)
 
     index = BM25Index(persist_directory=test_dir)
@@ -39,7 +40,7 @@ def test_bm25_index_is_cached_between_queries():
 
 
 def test_full_hybrid_validation_without_llm():
-    chroma_dir = "test_full_validation_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_full_validation_chroma"
     bm25_dir = bm25_directory_for(chroma_dir)
     shutil.rmtree(chroma_dir, ignore_errors=True)
     shutil.rmtree(bm25_dir, ignore_errors=True)

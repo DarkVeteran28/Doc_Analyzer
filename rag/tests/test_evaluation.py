@@ -1,7 +1,9 @@
 import json
+import os
 
 from rag.evaluation.metrics import load_evaluation_dataset
 from rag.evaluation.run_evaluation import run_evaluation
+from .conftest import TEST_ARTIFACTS
 
 
 def test_expanded_evaluation_dataset_has_expected_queries():
@@ -21,8 +23,10 @@ def test_expanded_evaluation_dataset_has_expected_queries():
 
 
 def test_expanded_evaluation_metrics():
-    chroma_dir = "test_eval_expanded_chroma"
-    report = run_evaluation(chroma_dir=chroma_dir)
+    chroma_dir = f"{TEST_ARTIFACTS}/test_eval_expanded_chroma"
+    report_path = f"{TEST_ARTIFACTS}/test_eval_expanded_chroma_report.json"
+    os.makedirs(TEST_ARTIFACTS, exist_ok=True)
+    report = run_evaluation(chroma_dir=chroma_dir, report_path=report_path)
 
     assert report["query_count"] == 25
 
@@ -34,7 +38,6 @@ def test_expanded_evaluation_metrics():
         for metric in ("recall_at_1", "recall_at_3", "recall_at_5", "mrr"):
             assert 0.0 <= scores[metric] <= 1.0
 
-    report_path = f"{chroma_dir}_report.json"
     with open(report_path, encoding="utf-8") as handle:
         saved_report = json.load(handle)
 
