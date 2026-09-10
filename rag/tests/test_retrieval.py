@@ -3,7 +3,7 @@ import shutil
 from rag.embeddings import generate_embedding
 from rag.vector_store import VectorStore
 from rag.retrieval import retrieve_chunks
-from .conftest import TEST_ARTIFACTS
+from conftest import TEST_ARTIFACTS
 
 
 def test_retrieval_filters_document():

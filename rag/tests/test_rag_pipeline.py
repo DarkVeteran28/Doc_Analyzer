@@ -4,7 +4,7 @@ from rag.rag_pipeline import (
     process_document,
     ask_question
 )
-from .conftest import TEST_ARTIFACTS
+from conftest import TEST_ARTIFACTS
 
 
 def test_full_rag_pipeline():

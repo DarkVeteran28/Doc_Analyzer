@@ -2,7 +2,7 @@
 
 Document Q&A pipeline combining **vector retrieval** (ChromaDB + MiniLM), **BM25
 keyword retrieval**, and **Reciprocal Rank Fusion (RRF)** for hybrid search.
-Answers are generated with **Ollama `qwen3:8b`**.
+Answers are generated with **Ollama `qwen3:8b`** (local) or **Google Gemini** (cloud), selected via the `LLM_PROVIDER` environment variable.
 
 ## Architecture
 
@@ -110,6 +110,31 @@ requirements-rag.txt   rank-bm25 dependency
 description.txt        Cumulative development log
 ```
 
+## LLM Providers
+
+| Variable | Values | Default |
+|---|---|---|
+| `LLM_PROVIDER` | `ollama` / `gemini` | `ollama` |
+| `GEMINI_API_KEY` | your Gemini API key | — (required when `gemini`) |
+| `GEMINI_MODEL` | any Gemini model name | `gemini-2.5-flash` |
+
+**Local development (Ollama):**
+
+```bash
+# default — no extra variables needed
+LLM_PROVIDER=ollama
+```
+
+**Cloud deployment (Gemini):**
+
+```bash
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=<your-secret-key>   # never commit this
+GEMINI_MODEL=gemini-2.5-flash      # optional
+```
+
+Copy `.env.example` to `.env` and fill in your key. `.env` is git-ignored.
+
 ## Setup
 
 ### Prerequisites
@@ -162,6 +187,16 @@ PYTHONPATH=. pytest rag/tests/ \
 ```bash
 PYTHONPATH=. pytest rag/tests/test_rag_pipeline.py -q -s
 ```
+
+### Gemini generation test (requires GEMINI_API_KEY)
+
+```bash
+GEMINI_API_KEY=<key> LLM_PROVIDER=gemini \
+    PYTHONPATH=. pytest rag/tests/test_generation_gemini.py -v -s
+```
+
+Skipped automatically when `GEMINI_API_KEY` is not set.
+
 
 ### Evaluation benchmark
 

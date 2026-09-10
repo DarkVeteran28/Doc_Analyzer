@@ -2,7 +2,7 @@ import shutil
 
 from rag.embeddings import generate_embedding
 from rag.vector_store import VectorStore
-from .conftest import TEST_ARTIFACTS
+from conftest import TEST_ARTIFACTS
 
 
 def test_vector_search():

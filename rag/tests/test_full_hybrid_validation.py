@@ -1,4 +1,4 @@
-from .conftest import TEST_ARTIFACTS
+from conftest import TEST_ARTIFACTS
 from unittest.mock import patch
 
 import shutil

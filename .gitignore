@@ -26,6 +26,7 @@ rag/evaluation/reports/
 # Environment variables
 .env
 .env.*
+!.env.example
 
 # macOS
 .DS_Store

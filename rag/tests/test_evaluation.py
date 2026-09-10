@@ -3,7 +3,7 @@ import os
 
 from rag.evaluation.metrics import load_evaluation_dataset
 from rag.evaluation.run_evaluation import run_evaluation
-from .conftest import TEST_ARTIFACTS
+from conftest import TEST_ARTIFACTS
 
 
 def test_expanded_evaluation_dataset_has_expected_queries():

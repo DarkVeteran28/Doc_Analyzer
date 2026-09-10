@@ -1,6 +1,6 @@
 import shutil
 
-from .conftest import TEST_ARTIFACTS
+from conftest import TEST_ARTIFACTS
 from rag.bm25 import BM25Index
 from rag.embeddings import generate_embedding
 from rag.retrieval import retrieve_chunks
