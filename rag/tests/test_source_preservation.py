@@ -1,5 +1,6 @@
 import shutil
 
+from conftest import TEST_ARTIFACTS
 from rag.bm25 import BM25Index
 from rag.embeddings import generate_embedding
 from rag.retrieval import bm25_directory_for, retrieve_chunks
@@ -69,7 +70,7 @@ def _index_hybrid_corpus(chroma_dir, document_id="paper_a", include_duplicate_pa
 
 
 def test_hybrid_retrieval_preserves_source_pages():
-    chroma_dir = "test_source_pages_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_source_pages_chroma"
     _index_hybrid_corpus(chroma_dir, include_duplicate_page=True)
 
     retrieved_chunks = retrieve_chunks(
@@ -99,7 +100,7 @@ def test_hybrid_retrieval_preserves_source_pages():
 
 
 def test_hybrid_sources_deduplicate_pages():
-    chroma_dir = "test_source_dedup_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_source_dedup_chroma"
     _index_hybrid_corpus(chroma_dir, include_duplicate_page=True)
 
     retrieved_chunks = retrieve_chunks(
@@ -117,7 +118,7 @@ def test_hybrid_sources_deduplicate_pages():
 
 
 def test_hybrid_sources_use_fused_top_chunk_text():
-    chroma_dir = "test_source_fused_text_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_source_fused_text_chroma"
     _index_hybrid_corpus(chroma_dir)
 
     retrieved_chunks = retrieve_chunks(

@@ -1,5 +1,6 @@
 import shutil
 
+from conftest import TEST_ARTIFACTS
 from rag.bm25 import BM25Index
 from rag.embeddings import generate_embedding
 from rag.retrieval import bm25_directory_for, retrieve_chunks
@@ -56,7 +57,7 @@ def _index_both(chroma_dir, document_id="paper_a"):
 
 
 def test_retrieval_mode_vector():
-    chroma_dir = "test_mode_vector_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_mode_vector_chroma"
     _index_both(chroma_dir)
 
     results = retrieve_chunks(
@@ -71,7 +72,7 @@ def test_retrieval_mode_vector():
 
 
 def test_retrieval_mode_bm25():
-    chroma_dir = "test_mode_bm25_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_mode_bm25_chroma"
     _index_both(chroma_dir)
 
     results = retrieve_chunks(
@@ -86,7 +87,7 @@ def test_retrieval_mode_bm25():
 
 
 def test_retrieval_mode_hybrid():
-    chroma_dir = "test_mode_hybrid_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_mode_hybrid_chroma"
     _index_both(chroma_dir)
 
     results = retrieve_chunks(

@@ -2,10 +2,11 @@ import shutil
 
 from rag.embeddings import generate_embedding
 from rag.vector_store import VectorStore
+from conftest import TEST_ARTIFACTS
 
 
 def test_vector_search():
-    test_db = "test_chroma_db"
+    test_db = f"{TEST_ARTIFACTS}/test_chroma_db"
 
     # Remove old test database so every test starts fresh
     shutil.rmtree(test_db, ignore_errors=True)

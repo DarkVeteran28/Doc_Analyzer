@@ -1,5 +1,6 @@
 import shutil
 
+from conftest import TEST_ARTIFACTS
 from rag.bm25 import BM25Index
 from rag.embeddings import generate_embedding
 from rag.retrieval import retrieve_chunks
@@ -94,8 +95,8 @@ def _compare_retrieval(question, chroma_dir, bm25_dir, document_id="paper_a"):
 
 
 def test_retrieval_comparison_exact_term_query():
-    chroma_dir = "test_compare_chroma_exact"
-    bm25_dir = "test_compare_bm25_exact"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_compare_chroma_exact"
+    bm25_dir = f"{TEST_ARTIFACTS}/test_compare_bm25_exact"
     shutil.rmtree(chroma_dir, ignore_errors=True)
     shutil.rmtree(bm25_dir, ignore_errors=True)
 
@@ -113,8 +114,8 @@ def test_retrieval_comparison_exact_term_query():
 
 
 def test_retrieval_comparison_numeric_query():
-    chroma_dir = "test_compare_chroma_numeric"
-    bm25_dir = "test_compare_bm25_numeric"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_compare_chroma_numeric"
+    bm25_dir = f"{TEST_ARTIFACTS}/test_compare_bm25_numeric"
     shutil.rmtree(chroma_dir, ignore_errors=True)
     shutil.rmtree(bm25_dir, ignore_errors=True)
 
@@ -131,8 +132,8 @@ def test_retrieval_comparison_numeric_query():
 
 
 def test_retrieval_comparison_records_differences():
-    chroma_dir = "test_compare_chroma_diff"
-    bm25_dir = "test_compare_bm25_diff"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_compare_chroma_diff"
+    bm25_dir = f"{TEST_ARTIFACTS}/test_compare_bm25_diff"
     shutil.rmtree(chroma_dir, ignore_errors=True)
     shutil.rmtree(bm25_dir, ignore_errors=True)
 

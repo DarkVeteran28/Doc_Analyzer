@@ -1,1 +1,2 @@
 rank-bm25
+google-genai

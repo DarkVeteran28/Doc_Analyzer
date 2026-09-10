@@ -1014,3 +1014,96 @@ Git status after commit:
   Local RAG == origin/RAG: SYNCHRONIZED
 
 AUDIT STATUS: FIXES APPLIED
+
+
+CHECKPOINT 18 - GEMINI PROVIDER SUPPORT (DEPLOYMENT)
+-----------------------------------------------------
+Status: COMPLETED
+Git branch: RAG
+Date: 2026-09-10
+
+Goal: Make the generation layer deployment-aware by supporting two LLM providers
+without changing the RAG architecture, retrieval pipeline, or public APIs.
+
+FILES CHANGED
+-------------
+
+rag/generation.py
+  - Added LLM_PROVIDER environment variable selection (default: ollama).
+  - Extracted _generate_ollama() — unchanged Ollama/qwen3:8b behavior.
+  - Added _generate_gemini() — calls Google Gemini via google-genai SDK.
+  - generate_answer() dispatches to the correct provider.
+  - Clear errors: missing GEMINI_API_KEY raises EnvironmentError;
+    unsupported provider raises ValueError; Gemini API failure raises
+    RuntimeError. API key is never logged or exposed.
+  - build_rag_prompt() unchanged.
+
+requirements-rag.txt
+  - Added: google-genai
+
+.env.example  (new file, safe to commit — placeholders only)
+  - LLM_PROVIDER=ollama
+  - GEMINI_API_KEY=
+  - GEMINI_MODEL=gemini-2.5-flash
+
+rag/tests/test_generation.py  (replaced)
+  - Kept test_build_rag_prompt (unchanged behavior).
+  - Added test_build_rag_prompt_empty_chunks.
+  - Added test_invalid_provider_raises_value_error (mock, no LLM).
+  - Added test_gemini_missing_api_key_raises_environment_error (mock).
+  - Added test_ollama_provider_calls_ollama (mock).
+  - Added test_gemini_provider_calls_genai (mock).
+  - Added test_default_provider_is_ollama (mock).
+
+rag/tests/test_generation_gemini.py  (new file)
+  - Live Gemini tests; auto-skipped when GEMINI_API_KEY is absent.
+  - test_gemini_generate_answer_returns_string
+  - test_gemini_no_answer_behavior
+
+rag/tests/conftest.py + test_*.py (12 files)
+  - Fixed relative import (.conftest) to absolute (conftest) for
+    pytest rootdir compatibility with TEST_ARTIFACTS.
+
+README.md
+  - Added "LLM Providers" section with env var table and usage examples.
+  - Added Gemini test command to Testing section.
+  - Updated generation description on line 5.
+
+PROVIDER SELECTION
+------------------
+  LLM_PROVIDER=ollama  (default) -> _generate_ollama -> ollama.chat(qwen3:8b)
+  LLM_PROVIDER=gemini             -> _generate_gemini -> google.genai.Client
+
+ENVIRONMENT VARIABLES
+---------------------
+  LLM_PROVIDER    ollama or gemini  (default: ollama)
+  GEMINI_API_KEY  required for gemini provider
+  GEMINI_MODEL    optional gemini model (default: gemini-2.5-flash)
+
+TEST RESULTS
+------------
+Non-LLM suite (50 tests):
+  50 passed, 2 skipped in 22.58s
+  Skipped: test_generation_gemini.py (2 tests — no GEMINI_API_KEY in env)
+  Zero failures.
+
+Live Gemini API test:
+  GEMINI_API_KEY not present in this environment.
+  Gemini tests: SKIPPED (auto-skip guard working correctly).
+
+Live Ollama test:
+  Preserved; test_generation_llm.py continues to work when Ollama is running.
+
+Secrets:
+  No API keys committed. .env is git-ignored. .env.example uses placeholders.
+
+ARCHITECTURE PRESERVED
+----------------------
+  - Hybrid retrieval (BM25 + ChromaDB + RRF): unchanged.
+  - chunking, embeddings, vector_store, bm25, fusion, retrieval: unchanged.
+  - rag_pipeline.py public API: unchanged.
+  - rag_service.py public API: unchanged.
+  - sources.py: unchanged.
+  - No retrieval modes removed or altered.
+  - Source/page preservation: unchanged.
+  - No-answer behavior: unchanged.

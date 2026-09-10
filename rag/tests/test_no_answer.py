@@ -1,5 +1,6 @@
 import shutil
 
+from conftest import TEST_ARTIFACTS
 from rag.bm25 import BM25Index
 from rag.embeddings import generate_embedding
 from rag.generation import build_rag_prompt
@@ -9,7 +10,7 @@ from rag.vector_store import VectorStore
 
 
 def test_empty_document_returns_no_chunks():
-    chroma_dir = "test_no_answer_empty_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_no_answer_empty_chroma"
     shutil.rmtree(chroma_dir, ignore_errors=True)
     shutil.rmtree(bm25_directory_for(chroma_dir), ignore_errors=True)
 
@@ -37,7 +38,7 @@ def test_no_answer_prompt_with_empty_context():
 
 
 def test_unrelated_query_still_returns_retrieved_context_without_confidence_gate():
-    chroma_dir = "test_no_answer_unrelated_chroma"
+    chroma_dir = f"{TEST_ARTIFACTS}/test_no_answer_unrelated_chroma"
     bm25_dir = bm25_directory_for(chroma_dir)
     shutil.rmtree(chroma_dir, ignore_errors=True)
     shutil.rmtree(bm25_dir, ignore_errors=True)
