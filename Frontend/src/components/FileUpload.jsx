@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 
-function FileUpload({ onAnalyze }) {
+function FileUpload({ onAnalyze, isUploading, uploadError }) {
   const [selectedFile, setSelectedFile] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState('')
@@ -56,10 +56,10 @@ function FileUpload({ onAnalyze }) {
   }
 
   const handleAnalyze = () => {
-  if (selectedFile) {
-    onAnalyze(selectedFile)
+    if (selectedFile) {
+      onAnalyze(selectedFile)
+    }
   }
-}
 
   return (
     <div className="mt-10 w-full max-w-2xl">
@@ -120,26 +120,35 @@ function FileUpload({ onAnalyze }) {
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <button
               onClick={handleAnalyze}
-              className="rounded-xl bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-500"
+              disabled={isUploading}
+              className="rounded-xl bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Analyze Document
+              {isUploading ? 'Uploading...' : 'Analyze Document'}
             </button>
 
             <button
               onClick={handleClick}
-              className="rounded-xl border border-slate-700 px-5 py-3 text-sm font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"
+              disabled={isUploading}
+              className="rounded-xl border border-slate-700 px-5 py-3 text-sm font-medium text-slate-300 transition hover:border-slate-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               Choose another
             </button>
 
             <button
               onClick={handleRemoveFile}
-              className="px-4 py-3 text-sm font-medium text-red-400 transition hover:text-red-300"
+              disabled={isUploading}
+              className="px-4 py-3 text-sm font-medium text-red-400 transition hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Remove
             </button>
           </div>
         </div>
+      )}
+
+      {uploadError && (
+        <p className="mt-3 text-center text-sm text-red-400">
+          {uploadError}
+        </p>
       )}
     </div>
   )

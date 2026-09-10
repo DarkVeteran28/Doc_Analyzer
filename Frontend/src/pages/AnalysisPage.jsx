@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { askQuestion } from '../services/api'
 
-function AnalysisPage({ file, onBack }) {
+function AnalysisPage({ file, document, onBack }) {
   const [question, setQuestion] = useState('')
   const [messages, setMessages] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -27,25 +28,27 @@ function AnalysisPage({ file, onBack }) {
     setIsLoading(true)
 
     try {
-      // Temporary API simulation
-      await new Promise((resolve) => setTimeout(resolve, 1200))
+      const result = await askQuestion(userQuestion, document.id)
+
+      const sourcePages = result.sources?.map((source) => source.page).join(', ')
 
       const aiMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content:
-          'This is a temporary AI response. Once the backend is connected, I will answer questions using the contents of your uploaded document.',
+        content: sourcePages
+          ? `${result.answer}\n\nSources: page ${sourcePages}`
+          : result.answer,
       }
 
       setMessages((prevMessages) => [
         ...prevMessages,
         aiMessage,
       ])
-    } catch (error) {
-      console.error('Failed to get AI response:', error)
+    } catch (err) {
+      console.error('Failed to get AI response:', err)
 
       setError(
-        'Something went wrong while getting the answer. Please try again.'
+        err.message || 'Something went wrong while getting the answer. Please try again.'
       )
     } finally {
       setIsLoading(false)
@@ -226,4 +229,3 @@ function AnalysisPage({ file, onBack }) {
 }
 
 export default AnalysisPage
-

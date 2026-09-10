@@ -1014,3 +1014,122 @@ Git status after commit:
   Local RAG == origin/RAG: SYNCHRONIZED
 
 AUDIT STATUS: FIXES APPLIED
+
+
+CHECKPOINT 19 - FRONTEND-BACKEND INTEGRATION (DEPLOYMENT)
+----------------------------------------------------------
+Status: COMPLETED
+Branch: main
+Date: 2026-09-10
+
+PROBLEM
+-------
+The deployed Vercel frontend showed a hardcoded placeholder message:
+"This is a temporary AI response. Once the backend is connected, I will
+answer questions using the contents of your uploaded document."
+
+The frontend upload and chat flows were never connected to the FastAPI backend.
+
+ROOT CAUSES FOUND
+-----------------
+1. AnalysisPage.jsx: handleSend used a fake setTimeout + hardcoded string.
+   No API call was ever made.
+
+2. App.jsx: handleAnalyze only set local state (no uploadDocument call).
+   No document ID was passed to AnalysisPage, so chat had nothing to send.
+
+3. api.js: wrong endpoints (/upload, /ask) and wrong field name (documentId
+   instead of document_id). getErrorMessage helper was missing.
+
+4. FileUpload.jsx: Analyze Document button had no isUploading/uploadError
+   props — no loading state during the real async upload.
+
+5. app/routes/documents.py: upload saved file but never called RAG indexing.
+   Document status stayed "uploaded" forever.
+
+6. app/routes/chat.py: empty file — the /chat endpoint did not exist.
+
+7. app/schemas/chat.py: empty file — ChatRequest/ChatResponse missing.
+
+8. app/main.py: no CORS middleware, chat router not registered.
+
+FIXES APPLIED
+-------------
+
+Backend (main branch):
+
+app/main.py
+  - Added CORSMiddleware with FRONTEND_URL env var + localhost origins.
+  - Registered chat_router alongside documents_router.
+
+app/routes/documents.py
+  - POST /documents/upload now calls process_document() (RAG indexing:
+    PDF extraction → chunking → MiniLM embeddings → ChromaDB + BM25).
+  - Status transitions: processing → processed (or failed on error).
+
+app/routes/chat.py  (was empty)
+  - POST /chat accepts {document_id, question}.
+  - Calls ask_question() → hybrid retrieval (RRF) → Gemini → answer + sources.
+
+app/schemas/chat.py  (was empty)
+  - ChatRequest: document_id + question.
+  - SourceItem: page + text.
+  - ChatResponse: answer + sources.
+
+Frontend:
+
+Frontend/src/services/api.js
+  - Fixed upload endpoint: /documents/upload  (was /upload).
+  - Fixed chat endpoint:   /chat              (was /ask).
+  - Fixed request field:   document_id        (was documentId).
+  - Added getErrorMessage() helper for better error messages.
+  - VITE_API_BASE_URL || localhost:8000 preserved unchanged.
+
+Frontend/src/App.jsx
+  - handleAnalyze now calls uploadDocument(), awaits the response.
+  - Stores document object in state, passes to AnalysisPage.
+  - isUploading and uploadError state passed to FileUpload.
+
+Frontend/src/pages/AnalysisPage.jsx
+  - Removed fake setTimeout + hardcoded placeholder text entirely.
+  - handleSend now calls askQuestion(question, document.id).
+  - Renders real answer + source page references from API response.
+  - Real error messages surfaced from backend (no silent failures).
+
+Frontend/src/components/FileUpload.jsx
+  - Accepts isUploading and uploadError props.
+  - Button shows "Uploading..." and is disabled during upload.
+  - All buttons disabled while upload is in progress.
+
+BACKEND ENDPOINTS CONNECTED
+----------------------------
+  POST /documents/upload  multipart file → DocumentResponse (id, status, ...)
+  POST /chat              {document_id, question} → {answer, sources[{page, text}]}
+
+CORS
+----
+  Required: yes.
+  FRONTEND_URL env var on Render → appended to allowed origins.
+  localhost:5173 and 127.0.0.1:5173 always allowed for local dev.
+  No wildcard "*" used.
+
+ENVIRONMENT VARIABLES (Render)
+-------------------------------
+  FRONTEND_URL=https://<vercel-app>.vercel.app
+  LLM_PROVIDER=gemini
+  GEMINI_API_KEY=<secret — never committed>
+  GEMINI_MODEL=gemini-2.5-flash
+
+SECRETS CHECK
+-------------
+  No API keys in source. No Render URL hardcoded. Frontend/.env untracked.
+
+BUILD RESULT
+------------
+  npm run build: ✓ built in 90ms, 0 errors.
+  pytest (non-LLM suite): 50 passed, 2 skipped.
+
+FULL REQUEST FLOW (DEPLOYED)
+-----------------------------
+  Upload:   Browser → Vercel → POST /documents/upload → RAG index → document.id
+  Question: Browser → Vercel → POST /chat → hybrid retrieval → Gemini → answer

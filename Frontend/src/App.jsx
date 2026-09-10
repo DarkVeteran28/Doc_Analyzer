@@ -1,25 +1,43 @@
 import { useState } from 'react'
 import FileUpload from './components/FileUpload'
 import AnalysisPage from './pages/AnalysisPage'
+import { uploadDocument } from './services/api'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home')
   const [selectedFile, setSelectedFile] = useState(null)
+  const [document, setDocument] = useState(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
 
-  const handleAnalyze = (file) => {
-    setSelectedFile(file)
-    setCurrentPage('analysis')
+  const handleAnalyze = async (file) => {
+    setIsUploading(true)
+    setUploadError('')
+
+    try {
+      const uploadedDocument = await uploadDocument(file)
+      setSelectedFile(file)
+      setDocument(uploadedDocument)
+      setCurrentPage('analysis')
+    } catch (error) {
+      setUploadError(error.message)
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const handleBack = () => {
     setCurrentPage('home')
     setSelectedFile(null)
+    setDocument(null)
+    setUploadError('')
   }
 
   if (currentPage === 'analysis') {
     return (
       <AnalysisPage
         file={selectedFile}
+        document={document}
         onBack={handleBack}
       />
     )
@@ -65,11 +83,14 @@ function App() {
           Get fast, accurate answers powered by AI.
         </p>
 
-        <FileUpload onAnalyze={handleAnalyze} />
+        <FileUpload
+          onAnalyze={handleAnalyze}
+          isUploading={isUploading}
+          uploadError={uploadError}
+        />
       </main>
     </div>
   )
 }
 
 export default App
-

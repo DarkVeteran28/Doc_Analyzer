@@ -12,6 +12,7 @@ from app.services.document_service import (
     get_document,
     delete_document,
 )
+from rag.rag_pipeline import process_document
 
 
 router = APIRouter(
@@ -49,7 +50,7 @@ async def upload_document(
         f"{document_id}.pdf"
     )
 
-    # 4. Save PDF
+    # 4. Save PDF to disk
     try:
         contents = await file.read()
 
@@ -62,14 +63,35 @@ async def upload_document(
             detail="Failed to save the uploaded file"
         )
 
-    # 5. Save metadata in database
+    # 5. Save metadata with processing status
     document = create_document(
         db=db,
         document_id=document_id,
         filename=file.filename,
         file_path=file_path,
-        status="uploaded"
+        status="processing"
     )
+
+    # 6. Run RAG indexing (chunking + embeddings + ChromaDB + BM25)
+    try:
+        process_document(
+            pdf_path=file_path,
+            document_id=document_id,
+            persist_directory="chroma_db"
+        )
+
+        document.status = "processed"
+        db.commit()
+        db.refresh(document)
+
+    except Exception as e:
+        document.status = "failed"
+        db.commit()
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Document processing failed: {str(e)}"
+        )
 
     return document
 
