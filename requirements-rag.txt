@@ -1,3 +1,6 @@
 rank-bm25
 pypdf
+ollama
+chromadb
+sentence-transformers
 google-genai
