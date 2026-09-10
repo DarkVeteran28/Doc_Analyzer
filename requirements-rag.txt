@@ -1,1 +1,3 @@
 rank-bm25
+pypdf
+google-genai
