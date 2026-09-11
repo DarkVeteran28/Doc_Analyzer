@@ -1,0 +1,19 @@
+[
+  {
+    "document_id": "doc_a",
+    "chunk_id": "doc_a_1_0",
+    "page": 1,
+    "text": "Cached BM25 index should not rebuild on every query.",
+    "tokens": [
+      "cached",
+      "bm25",
+      "index",
+      "should",
+      "not",
+      "rebuild",
+      "on",
+      "every",
+      "query"
+    ]
+  }
+]

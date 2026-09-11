@@ -1,0 +1,18 @@
+[
+  {
+    "document_id": "paper_b",
+    "chunk_id": "paper_b_1_0",
+    "page": 1,
+    "text": "This other paper discusses experiments in artificial intelligence.",
+    "tokens": [
+      "this",
+      "other",
+      "paper",
+      "discusses",
+      "experiments",
+      "in",
+      "artificial",
+      "intelligence"
+    ]
+  }
+]

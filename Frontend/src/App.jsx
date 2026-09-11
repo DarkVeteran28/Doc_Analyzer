@@ -54,12 +54,12 @@ function App() {
             </div>
 
             <h1 className="text-xl font-semibold">
-              Document Analyzer
+              Documind
             </h1>
           </div>
 
           <div className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300">
-            AI Powered
+            BM25 and RAG Powered
           </div>
         </div>
       </header>
@@ -67,7 +67,7 @@ function App() {
       {/* Hero Section */}
       <main className="flex flex-col items-center px-6 pt-24 text-center">
         <div className="rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm text-blue-400">
-          AI-powered document analysis
+          A Efficient Rag powered probablistic document analysis
         </div>
 
         <h2 className="mt-8 max-w-4xl text-5xl font-bold tracking-tight sm:text-6xl">

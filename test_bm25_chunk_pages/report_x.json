@@ -1,0 +1,24 @@
+[
+  {
+    "document_id": "report_x",
+    "chunk_id": "report_x_3_0",
+    "page": 3,
+    "text": "Section 3.1 describes catalyst loading of 15 mg and baseline pressure 101325 pascals.",
+    "tokens": [
+      "section",
+      "3",
+      "1",
+      "describes",
+      "catalyst",
+      "loading",
+      "of",
+      "15",
+      "mg",
+      "and",
+      "baseline",
+      "pressure",
+      "101325",
+      "pascals"
+    ]
+  }
+]
